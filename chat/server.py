@@ -4,21 +4,8 @@ import select
 import sys
 '''Replace "thread" with "_thread" for python 3'''
 from _thread import *
- 
-import struct
- 
-def pack_packet(version: int, operation: int, input: str) -> bytes:
-    data = bytes(input, 'utf-8')
-    data_len = struct.pack("!I", len(data))
-    packet_len = struct.pack("!I", 4 + 1 + 4 + len(data))
-    return packet_len + struct.pack("!IBI", version, operation, data_len) + data
 
-def unpack_packet(packet: bytes) -> tuple:
-    packet_len = struct.unpack("!I", packet[:4])[0]
-    version, operation = struct.unpack("!BI", packet[4: 9])
-    data_len = struct.unpack("!I", packet[9: 13])[0]
-    data = packet[13: 13 + data_len]
-    return version, operation, data
+from wire_protocol import pack_packet, unpack_packet
 
 """The first argument AF_INET is the address domain of the
 socket. This is used when we have an Internet Domain with
@@ -64,7 +51,8 @@ def clientthread(conn, addr):
  
     while True:
             try:
-                message = conn.recv(2048)
+                data = conn.recv(2048)
+                version, operation, message = unpack_packet(data)
                 if message:
  
                     """prints the message and address of the

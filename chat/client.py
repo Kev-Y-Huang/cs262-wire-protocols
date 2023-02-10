@@ -2,20 +2,8 @@
 import socket
 import select
 import sys
-import struct
- 
-def pack_packet(version: int, operation: int, input: str) -> bytes:
-    data = bytes(input, 'utf-8')
-    data_len = struct.pack("!I", len(data))
-    packet_len = struct.pack("!I", 4 + 1 + 4 + len(data))
-    return packet_len + struct.pack("!IBI", version, operation, data_len) + data
 
-def unpack_packet(packet: bytes) -> tuple:
-    packet_len = struct.unpack("!I", packet[:4])[0]
-    version, operation = struct.unpack("!BI", packet[4: 9])
-    data_len = struct.unpack("!I", packet[9: 13])[0]
-    data = packet[13: 13 + data_len]
-    return version, data
+from wire_protocol import pack_packet, unpack_packet
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 if len(sys.argv) != 3:
