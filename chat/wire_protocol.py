@@ -41,8 +41,9 @@ import struct
 # - 1 byte unsigned integer for operation code
 # - N bytes for packet data
 
-def pack_packet(version: int, operation: int, data: bytes) -> bytes:
-    data_len = struct.pack("!I", len(data))
+def pack_packet(version: int, operation: int, input: str) -> bytes:
+    data = input.encode('utf-8')
+    # data_len = struct.pack("!I", len(data))
     packet_len = struct.pack("!I", 4 + 4 + 1 + len(data))
     return packet_len + struct.pack("!IIB", version, len(data), operation) + data
 
@@ -50,12 +51,13 @@ def unpack_packet(packet: bytes) -> tuple:
     packet_len = struct.unpack("!I", packet[:4])[0]
     version, data_len, operation = struct.unpack("!IIB", packet[4: 13])
     data = packet[13: 13 + data_len]
-    return version, operation, data
+    output = data.decode('utf-8')
+    return version, operation, output
 
 # Example usage:
 version = 1
 operation = 10
-data = b"Hello, World!"
+data = "Hello, World!"
 packet = pack_packet(version, operation, data)
 unpacked_version, unpacked_operation, unpacked_data = unpack_packet(packet)
 
