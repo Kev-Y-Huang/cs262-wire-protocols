@@ -1,8 +1,16 @@
 # Engineering Notebook
 
 
+## Feb. 6th
+
+What we tried:
+
+What worked:
+
+What didn't work:
+
 ## Feb. 3rd
 
-Hello! We are starting our Wire Protocol. 
-
 We’re deciding to use a Python server
+
+Tested messaging from 
