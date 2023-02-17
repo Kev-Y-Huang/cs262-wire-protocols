@@ -62,7 +62,7 @@ class Chat:
             return Response(0, "Operation not permitted. You are not logged in.")
 
             
-    def list_accounts(self, accounts: dict, exp: str = "\S*") -> Response:
+    def list_accounts(self, exp: str = "\S*") -> Response:
         """
         Prints out the accounts created to current connected port
 
@@ -74,7 +74,7 @@ class Chat:
         # return all the usernames, which are just the keys to dictionary
         filter = re.compile(exp)
         accounts_to_list = []
-        for account in accounts:
+        for account in self.accounts:
             if filter.match(account):
                 accounts_to_list.append(account)
         
@@ -82,7 +82,7 @@ class Chat:
         return (0, str(accounts_to_list))
 
 
-    def create_account(self, accounts: dict, username: str) -> Response:
+    def create_account(self, username: str) -> Response:
         """
         Creates an account given a specified username
         
@@ -98,15 +98,15 @@ class Chat:
         if " " in username or "|" in username:
             return (0, "Username cannot have \" \" or \"|\"")
 
-        if username not in accounts:
-            accounts[username] = []
+        if username not in self.accounts:
+            self.accounts[username] = []
             return (0, "Account {} created".format(username))
         # otherwise, we will need to reject creating the account
         else:
             return (0, "Account {} failed to create. Please select another username".format(username))
 
             
-    def login_account(self, current_user: str, accounts: dict, online_users: set, username: str) -> Response:
+    def login_account(self, current_user: str, username: str) -> Response:
         """
         Logs in to an account given a specified username
         
@@ -117,19 +117,19 @@ class Chat:
             Account username 
         """
         # if the username is not in accounts, we cannot log in
-        if username not in accounts:
+        if username not in self.accounts:
             return (0, "Account {} not found".format(username))
         # otherwise, we will try to log in
         else:
             # if the current user is logged in, we need to log them out
-            if current_user in online_users:
-                online_users.remove(current_user)
+            if current_user in self.online_users:
+                self.online_users.remove(current_user)
 
             self.current_user = username
             return (0, "Logged into account {}".format(username))
 
 
-    def delete_account(self, accounts: dict, online_users: set) -> Response:
+    def delete_account(self, accounts: dict) -> Response:
         """
         Deletes the current account
 
@@ -141,14 +141,14 @@ class Chat:
             return (0, "A fatal error has occurred. Account failed to delete".format(deleted_account))
 
         del accounts[self.current_user]
-        online_users.remove(self.current_user)
+        self.online_users.remove(self.current_user)
         deleted_account = self.current_user
         self.current_user = None
         return (0, "Account {} deleted. You have been logged out".format(deleted_account))
        
 
 
-    def send_message(self, accounts: dict, online_users: set, username: str, message: str) -> Response:
+    def send_message(self, username: str, message: str) -> Response:
         """
         Logs in to an account given a specified username
         
@@ -159,20 +159,20 @@ class Chat:
             Account username 
         """
         # if the username does not exist, we cannot send the message
-        if username not in accounts:
+        if username not in self.accounts:
             return (0, "Account {} does not exist. Failed to send".format(username))
         else:
             # if the user is online, we can send the message directly
-            if username in online_users:
+            if username in self.online_users:
                 return (1, message)
             else:
                 # if they are not online, we need to queue the message, and then let 
                 # the current user message know that the messaged is queued to send
-                accounts[username].append(message)
+                self.accounts[username].append(message)
                 return (0, "Account {} not online. Message queued to send".format(username))
       
 
-    def deliver_undelivered(self, accounts: dict) -> Response:
+    def deliver_undelivered(self) -> Response:
         """
         Logs in to an account given a specified username
         
@@ -183,7 +183,7 @@ class Chat:
             Account username 
         """
         messages = ""
-        for message in accounts[self.current_user]:
+        for message in self.accounts[self.current_user]:
             messages.append(message + "\n")
         # if there were no queued messages, then the messages string will remain empty
         # and we should send a message to the current conection
@@ -194,14 +194,13 @@ class Chat:
 
 
 
-    def close_server(self, accounts: dict, online_users: set) -> Response:
+    def close_server(self, online_users: set) -> Response:
         """
         Logs in to an account given a specified username
         
         Parameters
         ----------
         
-        
         """
-        online_users.remove(self.current_user)
+        self.online_users.remove(self.current_user)
         return (0, "Connection closed")
