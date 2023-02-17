@@ -2,10 +2,11 @@
 import socket
 import select
 import sys
-'''Replace "thread" with "_thread" for python 3'''
+
 from _thread import *
 import threading
 
+from utils import Chat
 from wire_protocol import pack_packet, unpack_packet
 
 """The first argument AF_INET is the address domain of the
@@ -16,23 +17,16 @@ a continuous flow."""
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
-# checks whether sufficient arguments have been provided
-if len(sys.argv) != 3:
-    print("Correct usage: script, IP address, port number")
-    exit()
-
-# takes the first argument from command prompt as IP address
-IP_address = str(sys.argv[1])
-
-# takes second argument from command prompt as port number
-Port = int(sys.argv[2])
+IP_ADDRESS = 12345
+PORT = 12345
+server.connect((IP_ADDRESS, PORT))
 
 """
 binds the server to an entered IP address and at the
 specified port number.
 The client must be aware of these parameters
 """
-server.bind((IP_address, Port))
+server.bind((IP_ADDRESS, PORT))
 
 """
 listens for 1 active connection. This number can be
@@ -40,7 +34,10 @@ increased as per convenience.
 """
 server.listen(1)
 
-list_of_clients = []
+chat_app = Chat()
+
+accounts = {}
+online_users = set()
 
 
 def clientthread(conn, addr):
@@ -53,17 +50,15 @@ def clientthread(conn, addr):
     while True:
         try:
             data = conn.recv(2048)
-            version, operation, message = unpack_packet(data)
+            op_code, message = unpack_packet(data)
+
             if message:
+                chat_app.handler(op_code, message)
 
                 """prints the message and address of the
                 user who just sent the message on the server
                 terminal"""
-                print("<" + addr[0] + "> " + message)
-
-                # Calls broadcast function to send message to all
-                message_to_send = "<" + addr[0] + "> " + message
-                broadcast(message_to_send, conn)
+                print("<" + addr[0] + "> " + op_code + "|" + message)
 
             else:
                 """message may have no content if the connection
@@ -101,24 +96,21 @@ def remove(connection):
         list_of_clients.remove(connection)
 
 
-while True:
+def main():
+    while True:
 
-    """Accepts a connection request and stores two parameters,
-    conn which is a socket object for that user, and addr
-    which contains the IP address of the client that just
-    connected"""
-    conn, addr = server.accept()
+        """Accepts a connection request and stores two parameters,
+        conn which is a socket object for that user, and addr
+        which contains the IP address of the client that just
+        connected"""
+        conn, addr = server.accept()
 
-    """Maintains a list of clients for ease of broadcasting
-    a message to all available people in the chatroom"""
-    list_of_clients.append(conn)
+        # prints the address of the user that just connected
+        print(addr[0] + " connected")
 
-    # prints the address of the user that just connected
-    print(addr[0] + " connected")
+        # creates and individual thread for every user
+        # that connects
+        start_new_thread(clientthread, (conn, addr))
 
-    # creates and individual thread for every user
-    # that connects
-    start_new_thread(clientthread, (conn, addr))
-
-conn.close()
-server.close()
+    conn.close()
+    server.close()
