@@ -8,9 +8,11 @@ import struct
 # - N bytes for packet data
 
 def pack_packet(operation: int, input: str) -> bytes:
+    # data = input.encode('utf-8')
+    # packet_len = struct.pack("!I", 4 + 4 + 1 + len(data))
+    # return packet_len + struct.pack("!IB", len(data), operation) + data
     data = input.encode('utf-8')
-    packet_len = struct.pack("!I", 4 + 4 + 1 + len(data))
-    return packet_len + struct.pack("!IB", len(data), operation) + data
+    return struct.pack("!IB", len(data), operation) + data
 
 def unpack_packet(packet: bytes) -> tuple:
     data_len, operation = struct.unpack("!IB", packet[:5])
@@ -19,7 +21,7 @@ def unpack_packet(packet: bytes) -> tuple:
     return operation, output
 
 # Example usage:
-operation = 10
+operation = 1
 data = "Hello, World!"
 packet = pack_packet(operation, data)
 unpacked_operation, unpacked_data = unpack_packet(packet)

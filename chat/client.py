@@ -16,7 +16,7 @@ ERROR_MSG = """Invalid input string, please use format <command>|<text>\n
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-IP_ADDRESS = 12345
+IP_ADDRESS = "127.0.0.1"
 PORT = 12345
 server.connect((IP_ADDRESS, PORT))
 

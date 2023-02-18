@@ -17,7 +17,7 @@ a continuous flow."""
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
-IP_ADDRESS = 12345
+IP_ADDRESS = "127.0.0.1"
 PORT = 12345
 server.connect((IP_ADDRESS, PORT))
 
@@ -44,7 +44,7 @@ def clientthread(conn, addr):
 
     # sends a message to the client whose user object is conn
     message = 'Connected to server'
-    output = pack_packet(1, 1, message)
+    output = pack_packet(1, message)
     conn.send(output)
 
     while True:
@@ -53,12 +53,15 @@ def clientthread(conn, addr):
             op_code, message = unpack_packet(data)
 
             if message:
-                chat_app.handler(op_code, message)
+                recip_conn, response = chat_app.handler(op_code, message, conn, addr)
 
                 """prints the message and address of the
                 user who just sent the message on the server
                 terminal"""
                 print("<" + addr[0] + "> " + op_code + "|" + message)
+
+                pack_packet(1, response)
+                recip_conn.send(response)
 
             else:
                 """message may have no content if the connection
@@ -84,16 +87,6 @@ def broadcast(message, connection):
 
                 # if the link is broken, we remove the client
                 remove(clients)
-
-
-"""The following function simply removes the object
-from the list that was created at the beginning of
-the program"""
-
-
-def remove(connection):
-    if connection in list_of_clients:
-        list_of_clients.remove(connection)
 
 
 def main():
