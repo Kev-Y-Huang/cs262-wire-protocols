@@ -152,6 +152,9 @@ class Chat:
         # Checks if the passed-in username is valid
         if " " in username or "|" in username:
             return [(conn, "<server> Username cannot have \" \" or \"|\"")]
+        
+        if "" == username:
+            return [(conn, "<server> Username cannot be empty")]
 
         # if the username already exists, reject the request
         self.lock.acquire()
@@ -208,17 +211,19 @@ class Chat:
         """
 
         conn = user.get_conn()
+        to_logout = user.get_name()
+
+        if to_logout not in self.accounts or to_logout not in self.online_users:
+            return [(conn, f"<server> You are not logged in, or account {to_logout} does not exist. Failed to logout")]
 
         self.lock.acquire()
         del self.online_users[user.get_name()]
         self.lock.release()
 
-        logged_out_user = user.get_name()
         user.set_name()
+        return [(conn, f"<server> Logged out of {to_logout}")]
 
-        return [(conn, f"<server> Logged out of {logged_out_user}")]
-
-    def delete_account(self, user: User, accounts: dict) -> list[Response]:
+    def delete_account(self, user: User) -> list[Response]:
         """
         Deletes the current account
 
@@ -228,16 +233,18 @@ class Chat:
         """
 
         conn = user.get_conn()
+        to_delete = user.get_name()
 
         self.lock.acquire()
-        del accounts[user.get_name()]
-        del self.online_users[user.get_name()]
+        if to_delete not in self.accounts or to_delete not in self.online_users:
+            return [(conn, f"<server> You are not logged in, or account {to_delete} does not exist. Failed to delete")]
+        else:
+            del self.accounts[to_delete]
+            del self.online_users[to_delete]
         self.lock.release()
 
-        deleted_user = user.get_name()
         user.set_name()
-
-        return [(conn, f"<server> Account {deleted_user} deleted. You have been logged out")]
+        return [(conn, f"<server> Account {to_delete} deleted. You have been logged out")]
 
     def send_message(self, user: User, send_user: str, message: str) -> list[Response]:
         """

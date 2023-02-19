@@ -18,7 +18,7 @@ def unpack_packet(packet: bytes) -> tuple:
     return operation, output
 
 
-# Example usage:
+# Sample Tests
 operation = 1
 data = "Hello, World!"
 packet = pack_packet(operation, data)

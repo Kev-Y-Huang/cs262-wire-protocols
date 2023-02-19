@@ -2,8 +2,10 @@
 import socket
 import select
 import sys
+import platform
 
-import msvcrt
+if platform.system() == 'Windows':
+    import msvcrt
 
 import re
 
@@ -44,7 +46,10 @@ while True:
         # select.select on Windows only supports sockets so have
         # to use msvcrt to add polling for standard input as per
         # https://stackoverflow.com/a/46823814
-        if msvcrt.kbhit():
+        if platform.system() == 'Windows':
+            if msvcrt.kbhit():
+                read_sockets.append(sys.stdin)
+        else:
             read_sockets.append(sys.stdin)
 
         for socks in read_sockets:
