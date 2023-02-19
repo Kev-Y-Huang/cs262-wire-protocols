@@ -41,7 +41,7 @@ while True:
         read_sockets, write_socket, error_socket = select.select(
             sockets_list, [], [], 0.1)
         
-        # select.select on Windows only can use sockets so have
+        # select.select on Windows only supports sockets so have
         # to use msvcrt to add polling for standard input as per
         # https://stackoverflow.com/a/46823814
         if msvcrt.kbhit():

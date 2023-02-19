@@ -43,7 +43,7 @@ def clientthread(conn, addr):
     output = pack_packet(1, message)
     conn.send(output)
 
-    curr_user = User()
+    curr_user = User(conn)
 
     while True:
         try:
@@ -57,33 +57,37 @@ def clientthread(conn, addr):
                 terminal"""
                 print(f"<{addr[0]}> {op_code}|{contents}")
 
-                recip_conn, response = chat_app.handler(
-                    conn, int(op_code), curr_user, contents)
+                responses = chat_app.handler(
+                    int(op_code), curr_user, contents)
 
-                output = pack_packet(1, response)
-                recip_conn.send(output)
+                for recip_conn, response in responses:
+                    output = pack_packet(1, response)
+                    recip_conn.send(output)
+
             # If data has no content, we remove the connection
             else:
-                chat_app.handler(conn, addr, int(4))
+                chat_app.handler(4)
 
         except:
             break
 
 
 while True:
+    try:
+        """Accepts a connection request and stores two parameters,
+        conn which is a socket object for that user, and addr
+        which contains the IP address of the client that just
+        connected"""
+        conn, addr = server.accept()
 
-    """Accepts a connection request and stores two parameters,
-    conn which is a socket object for that user, and addr
-    which contains the IP address of the client that just
-    connected"""
-    conn, addr = server.accept()
+        # prints the address of the user that just connected
+        print(addr[0] + " connected")
 
-    # prints the address of the user that just connected
-    print(addr[0] + " connected")
-
-    # creates and individual thread for every user
-    # that connects
-    start_new_thread(clientthread, (conn, addr))
+        # creates and individual thread for every user
+        # that connects
+        start_new_thread(clientthread, (conn, addr))
+    except KeyboardInterrupt:
+        break
 
 conn.close()
 server.close()
