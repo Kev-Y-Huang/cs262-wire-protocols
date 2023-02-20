@@ -1,0 +1,61 @@
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package chatservice;
+
+// Interface exported by the server.
+service ChatServer {
+  rpc CreateAccount(Username) returns (User);
+
+  rpc DeleteAccount(User) returns (User);
+
+  rpc ListAccounts(Wildcard) returns (ListofUsernames);
+
+  rpc ChatStream(User) returns (stream ChatMessage);
+
+  rpc SendMessage(ChatMessage) returns (Empty);
+
+  rpc DeliverMessages(User) returns (stream ChatMessage);
+
+  rpc Login(User) returns (User);
+
+  rpc Logout(User) returns (User);
+}
+
+message Empty {}
+
+message Username {
+  string name = 1;
+}
+
+message User {
+  int32 user_id = 1;
+  string username = 2;
+}
+
+message ListofUsernames {
+  repeated string usernames=1;
+}
+
+message Wildcard {
+  string wildcard = 1;
+}
+
+message ChatMessage {
+  string username = 1;
+  string recip_username = 2;
+  string message = 3;
+}
