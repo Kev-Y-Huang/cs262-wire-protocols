@@ -42,9 +42,12 @@ Format: <command>|<text>
 
 To shut down the client, type `Ctrl+C` in the client terminal. 
 
-## Folder Structure
+## How to run the tests
 
-.
+Navigate into the `chat` folder and run `python3 tests.py`. Tests should all pass with a `All tests passed!` message in the console. 
+
+## Folder Structure
+```
 ├── chat	                # All of the code is here
 |   ├── __init__.py		    # Initializes application from config file
 │   ├── chat.proto          # Definition of Protocol Buffer Objects
@@ -56,3 +59,4 @@ To shut down the client, type `Ctrl+C` in the client terminal.
 ├── .gitignore	
 ├── NOTEBOOK.md             # Engineering notebook	
 └── README.md
+```
