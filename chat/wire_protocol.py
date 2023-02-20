@@ -16,13 +16,3 @@ def unpack_packet(packet: bytes) -> tuple:
     data = packet[5:5 + data_len]
     output = data.decode('utf-8')
     return operation, output
-
-
-# Sample Tests
-operation = 1
-data = "Hello, World!"
-packet = pack_packet(operation, data)
-unpacked_operation, unpacked_data = unpack_packet(packet)
-
-assert operation == unpacked_operation
-assert data == unpacked_data

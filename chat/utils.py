@@ -296,6 +296,7 @@ class Chat:
         self.lock.acquire()
         responses = [(conn, message)
                      for message in self.accounts[user.get_name()]]
+        self.accounts[user.get_name()] = []
         self.lock.release()
 
         # if there were no queued messages, then the messages string will remain empty
