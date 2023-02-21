@@ -4,6 +4,8 @@ import select
 import sys
 import platform
 import re
+import threading
+from threading import *
 
 from wire_protocol import pack_packet, unpack_packet
 
@@ -23,10 +25,22 @@ IP_ADDRESS = socket.gethostname()
 PORT = 6666
 server.connect((IP_ADDRESS, PORT))
 
+class receive_messages(Thread):
+    def run(self):
+        while True:
+            try:
+                message = server.recv(1024)
+                operation, data = unpack_packet(message)
+                print(data)
+            except KeyboardInterrupt:
+                break
+
+t1 = receive_messages()
+t1.start()
 while True:
     try:
         # maintains a list of possible input streams
-        sockets_list = [server]
+        sockets_list = []
 
         """There are two possible input situations. Either the
         user wants to give manual input to send to other people,

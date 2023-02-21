@@ -2,6 +2,7 @@
 import socket
 import select
 import sys
+import time
 
 from _thread import *
 import threading
@@ -31,7 +32,7 @@ server.bind((IP_ADDRESS, PORT))
 listens for 1 active connection. This number can be
 increased as per convenience.
 """
-server.listen(1)
+server.listen(5)
 
 chat_app = Chat()
 
@@ -63,10 +64,11 @@ def clientthread(conn, addr):
                 for recip_conn, response in responses:
                     output = pack_packet(1, response)
                     recip_conn.send(output)
+                    time.sleep(0.1)
 
             # If data has no content, we remove the connection
             else:
-                chat_app.handler(4)
+                chat_app.handler(3, curr_user)
 
         except:
             break
