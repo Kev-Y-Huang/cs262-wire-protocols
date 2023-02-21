@@ -1,6 +1,6 @@
 import logging
-import chat_pb2
-import chat_pb2_grpc
+import GRPC.chat_pb2 as chat_pb2
+import GRPC.chat_pb2_grpc as chat_pb2_grpc
 import grpc
 import re
 from hashlib import md5

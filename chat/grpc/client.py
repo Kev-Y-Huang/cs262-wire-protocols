@@ -1,6 +1,6 @@
 import grpc
-import chat_pb2 as chat_pb2
-import chat_pb2_grpc as chat_pb2_grpc
+import GRPC.chat_pb2 as chat_pb2
+import GRPC.chat_pb2_grpc as chat_pb2_grpc
 # import src.client.exceptions as client_exceptions
 
 import threading
@@ -8,15 +8,13 @@ import threading
 import re
 import sys
 
-YAML_CONFIG_PATH = './config.yaml'
-
 
 class ChatClient:
     """Wrapper class to interact with the grpc chat server"""
 
-    def __init__(self):
+    def __init__(self, ip_address, port):
         # server_host, server_port = self.__get_server_config_from_file()
-        self.__channel = grpc.insecure_channel('localhost:6666')
+        self.__channel = grpc.insecure_channel(f'{ip_address}:{port}')
         self.__stub = chat_pb2_grpc.ChatServerStub(self.__channel)
         self.__user = None
         self.__is_connected = False
@@ -54,10 +52,6 @@ class ChatClient:
             return self.deliver_undelivered()
         else:
             return [(user.get_conn(), "<server> Operation not permitted. You are not logged in.")]
-
-    # def __get_server_config_from_file(self):
-    #     yaml_config = utils.read_yaml_config(YAML_CONFIG_PATH)
-    #     return utils.get_server_config_from_yaml(yaml_config)
 
     @property
     def is_connected(self):

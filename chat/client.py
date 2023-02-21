@@ -1,4 +1,3 @@
-# Python program to implement client side of chat room.
 import socket
 import select
 import sys
@@ -7,8 +6,12 @@ import re
 import threading
 from threading import *
 
-from wire_protocol import pack_packet, unpack_packet
+from GRPC.client import ChatClient
+from wire.client import ReceiveMessages
+from wire.wire_protocol import pack_packet
+from utils import get_server_config_from_file
 
+YAML_CONFIG_PATH = '../config.yaml'
 ERROR_MSG = """Invalid input string, please use format <command>|<text>
     0|                  -> list user accounts
     1|<username>        -> create an account with name username
@@ -18,40 +21,56 @@ ERROR_MSG = """Invalid input string, please use format <command>|<text>
     5|<username>|<text> -> send message to username
     6|                  -> deliver all unsent messages to current user"""
 
-server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-# Setup connection to server socket
-IP_ADDRESS = socket.gethostname()
-PORT = 6666
-server.connect((IP_ADDRESS, PORT))
+def main():
+    if len(sys.argv) != 2:
+        print('Correct usage: python client.py [implementation]')
+        exit()
 
-class receive_messages(Thread):
-    def run(self):
+    ip_address, port = get_server_config_from_file(YAML_CONFIG_PATH)
+
+    if sys.argv[1] == 'wire':
+        # Setup connection to server socket
+        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server.connect((ip_address, port))
+
+        t1 = ReceiveMessages(server)
+        t1.start()
         while True:
             try:
-                message = server.recv(1024)
-                operation, data = unpack_packet(message)
-                print(data)
+                usr_input = input()
+                if usr_input == "quit":
+                    sys.exit()
+                else:
+                    if usr_input != '':
+                        # Parses the user input to see if it is a valid input
+                        match = re.match(r"(\d)\|((\S| )*)", usr_input)
+                        if match:
+                            op_code, message = int(match.group(1)), match.group(2)
+                            output = pack_packet(op_code, message)
+                            server.send(output)
+                        else:
+                            print(ERROR_MSG)
             except KeyboardInterrupt:
                 break
+        server.close()
+    elif sys.argv[1] == 'grpc':
+        chat = ChatClient(ip_address, port)
 
-t1 = receive_messages()
-t1.start()
-while True:
-    try:
-        usr_input = input()
-        if usr_input == "quit":
-            sys.exit()
-        else:
-            if usr_input != '':
-                # Parses the user input to see if it is a valid input
-                match = re.match(r"(\d)\|((\S| )*)", usr_input)
-                if match:
-                    op_code, message = int(match.group(1)), match.group(2)
-                    output = pack_packet(op_code, message)
-                    server.send(output)
-                else:
-                    print(ERROR_MSG)
-    except KeyboardInterrupt:
-        break
-server.close()
+        while True:
+            usr_input = input()
+            if usr_input == "quit":
+                sys.exit()
+            else:
+                if usr_input != '':
+                    # Parses the user input to see if it is a valid input
+                    match = re.match(r"(\d)\|((\S| )*)", usr_input)
+                    if match:
+                        op_code, message = int(match.group(1)), match.group(2)
+                        chat.handler(op_code, message)
+                    else:
+                        print(ERROR_MSG)
+
+
+if __name__ == "__main__":
+    main()
