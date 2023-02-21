@@ -1,6 +1,21 @@
 # Engineering Notebook
 
-## Feb 19th
+## Working Log
+### Feb 20th
+
+Tasks done
+
+* Added in working GRPC
+    * Decided to create new functions even though the code was very similar in order to handle specifics within GRPC
+* Added in authentication checks for when a user tries specific op codes.
+
+TODOs
+
+Problems/Questions:
+
+* We saw issues with multiple packets being sent to the client through our wire protocol implementation, specifically when a user decided to deliver all messages that had been queued to send to them when they were offline. Packets were beign skipped when received, even though they were all being sent. We determined this was becauset the packets were being sent to quickly, so to solve this, we decided to add a short timeout between packets being sent.
+
+### Feb 19th
 
 Tasks done
 
@@ -16,7 +31,7 @@ Problems/Questions:
 
 * None
 
-## Feb 18th
+### Feb 18th
 
 Tasks done
 
@@ -36,7 +51,7 @@ Problems/Questions:
     * Need to check the os of the user and conditionally use msvcrt
 
 
-## Feb 17th
+### Feb 17th
 
 Tasks done
 
@@ -72,7 +87,7 @@ Problems/Questions:
     * Right now, we have Ctrl+C to disconnect
 
 
-## Feb 16th
+### Feb 16th
 
 Tasks done
 
@@ -109,7 +124,7 @@ Problems/Questions:
     * Potentially creating a new User class to handle this?
 
 
-## Feb 13
+### Feb 13
 
 Learnings from OH
 
@@ -132,7 +147,7 @@ Resources
 
 * [Python Multithreading Tutorial](https://www.geeksforgeeks.org/socket-programming-multi-threading-python/)
 
-## Feb 10
+### Feb 10
 
 Tasks done
 
@@ -165,7 +180,7 @@ Resources:
     * Insight into how to continuously communicate between client and server
 * [Github example of server-client communication](https://github.com/furas/python-examples/tree/master/socket/simple-protocol)
 
-## Feb. 3rd
+### Feb. 3rd
 
 * Starting our Wire Protocol
 * Choosing to use Python

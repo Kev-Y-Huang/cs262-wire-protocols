@@ -48,15 +48,20 @@ Navigate into the `chat` folder and run `python3 tests.py`. Tests should all pas
 
 ## Folder Structure
 ```
-├── chat	                # All of the code is here
-|   ├── __init__.py		    # Initializes application from config file
-│   ├── chat.proto          # Definition of Protocol Buffer Objects
-│   ├── client.py           # Contains the code for the client
-│   ├── server.py           # Contains the code for the server
-│   ├── wire_protocol.py    # Contains the code for defining the wire protocol
-|   ├── tests.py	        # Unit tests for the application
-|   └── utils.py		    # Defines the classes (User, Chat) used by the client and server
+├── chat	                    # All of the code is here
+|   ├── grpc	                # GRPC implementation in here
+|   |   ├── chat_pb2_grpc.py    #file auto
+|   |   ├──
+|   |   ├──
+|   |   └──
+|   ├── __init__.py		        # Initializes application from config file
+│   ├── chat.proto              # Definition of Protocol Buffer Objects
+│   ├── client.py               # Contains the code for the wire protocol client
+│   ├── server.py               # Contains the code for the wire protocol server
+│   ├── wire_protocol.py        # Contains the code for defining the wire protocol
+|   ├── tests.py	            # Unit tests for the wire protocol application
+|   └── utils.py		        # Defines the classes (User, Chat) used by the client and server
 ├── .gitignore	
-├── NOTEBOOK.md             # Engineering notebook	
-└── README.md
+├── NOTEBOOK.md                 # Engineering notebook	
+└── README.md                   # README
 ```

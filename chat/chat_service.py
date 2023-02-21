@@ -90,7 +90,7 @@ class Chat:
             return self.create_account(user, content)
         elif op_code == 2:
             return self.login_account(user, content)
-        elif user in self.online_users:
+        elif user.username in self.online_users:
             if op_code == 3:
                 return self.logout_account(user)
             elif op_code == 4:

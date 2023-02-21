@@ -65,26 +65,21 @@ while True:
                 sockets_list, [], [], 0)
 
         for socks in read_sockets:
-            if socks == server:
-                message = socks.recv(2048)
-                operation, data = unpack_packet(message)
-                print(data)
+            usr_input = sys.stdin.readline()
+
+            # Parses the user input to see if it is a valid input
+            match = re.match(r"(\d)\|((\S| )*)", usr_input)
+            if match:
+                op_code, message = int(match.group(1)), match.group(2)
+
+                # Encodes the message
+                output = pack_packet(op_code, message)
+                server.send(output)
+
+                if op_code == 5:
+                    break
             else:
-                usr_input = sys.stdin.readline()
-
-                # Parses the user input to see if it is a valid input
-                match = re.match(r"(\d)\|((\S| )*)", usr_input)
-                if match:
-                    op_code, message = int(match.group(1)), match.group(2)
-
-                    # Encodes the message
-                    output = pack_packet(op_code, message)
-                    server.send(output)
-
-                    if op_code == 5:
-                        break
-                else:
-                    print(ERROR_MSG)
+                print(ERROR_MSG)
     except KeyboardInterrupt:
         break
 server.close()
