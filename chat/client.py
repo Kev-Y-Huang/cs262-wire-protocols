@@ -3,10 +3,6 @@ import socket
 import select
 import sys
 import platform
-
-if platform.system() == 'Windows':
-    import msvcrt
-
 import re
 
 from wire_protocol import pack_packet, unpack_packet
@@ -15,7 +11,7 @@ ERROR_MSG = """Invalid input string, please use format <command>|<text>
     0|                  -> list user accounts
     1|<username>        -> create an account with name username
     2|<username>        -> login to an account with name username
-    3|<username>        -> logout from current account
+    3|                  -> logout from current account
     4|                  -> delete current account
     5|<username>|<text> -> send message to username
     6|                  -> deliver all unsent messages to current user"""
@@ -40,17 +36,19 @@ while True:
         to send a message, then the if condition will hold true
         below. If the user wants to send a message, the else
         condition will evaluate as true"""
-        read_sockets, write_socket, error_socket = select.select(
-            sockets_list, [], [], 0.1)
-        
         # select.select on Windows only supports sockets so have
         # to use msvcrt to add polling for standard input as per
         # https://stackoverflow.com/a/46823814
         if platform.system() == 'Windows':
+            read_sockets, write_socket, error_socket = select.select(
+                sockets_list, [], [], 0.1)
+            import msvcrt
             if msvcrt.kbhit():
                 read_sockets.append(sys.stdin)
         else:
-            read_sockets.append(sys.stdin)
+            sockets_list.append(sys.stdin)
+            read_sockets, write_socket, error_socket = select.select(
+                sockets_list, [], [], 0)
 
         for socks in read_sockets:
             if socks == server:
