@@ -18,7 +18,7 @@ package chatservice;
 
 // Interface exported by the server.
 service ChatServer {
-  rpc CreateAccount(Username) returns (User);
+  rpc CreateAccount(User) returns (User);
 
   rpc DeleteAccount(User) returns (User);
 
@@ -28,7 +28,7 @@ service ChatServer {
 
   rpc SendMessage(ChatMessage) returns (Empty);
 
-  rpc DeliverMessages(User) returns (stream ChatMessage);
+  rpc DeliverMessages(User) returns (Empty);
 
   rpc Login(User) returns (User);
 
@@ -37,13 +37,8 @@ service ChatServer {
 
 message Empty {}
 
-message Username {
-  string name = 1;
-}
-
 message User {
-  int32 user_id = 1;
-  string username = 2;
+  string username = 1;
 }
 
 message ListofUsernames {

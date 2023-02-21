@@ -17,7 +17,7 @@ class ChatServerStub(object):
         """
         self.CreateAccount = channel.unary_unary(
                 '/chatservice.ChatServer/CreateAccount',
-                request_serializer=chat__pb2.Username.SerializeToString,
+                request_serializer=chat__pb2.User.SerializeToString,
                 response_deserializer=chat__pb2.User.FromString,
                 )
         self.DeleteAccount = channel.unary_unary(
@@ -40,10 +40,10 @@ class ChatServerStub(object):
                 request_serializer=chat__pb2.ChatMessage.SerializeToString,
                 response_deserializer=chat__pb2.Empty.FromString,
                 )
-        self.DeliverMessages = channel.unary_stream(
+        self.DeliverMessages = channel.unary_unary(
                 '/chatservice.ChatServer/DeliverMessages',
                 request_serializer=chat__pb2.User.SerializeToString,
-                response_deserializer=chat__pb2.ChatMessage.FromString,
+                response_deserializer=chat__pb2.Empty.FromString,
                 )
         self.Login = channel.unary_unary(
                 '/chatservice.ChatServer/Login',
@@ -114,7 +114,7 @@ def add_ChatServerServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'CreateAccount': grpc.unary_unary_rpc_method_handler(
                     servicer.CreateAccount,
-                    request_deserializer=chat__pb2.Username.FromString,
+                    request_deserializer=chat__pb2.User.FromString,
                     response_serializer=chat__pb2.User.SerializeToString,
             ),
             'DeleteAccount': grpc.unary_unary_rpc_method_handler(
@@ -137,10 +137,10 @@ def add_ChatServerServicer_to_server(servicer, server):
                     request_deserializer=chat__pb2.ChatMessage.FromString,
                     response_serializer=chat__pb2.Empty.SerializeToString,
             ),
-            'DeliverMessages': grpc.unary_stream_rpc_method_handler(
+            'DeliverMessages': grpc.unary_unary_rpc_method_handler(
                     servicer.DeliverMessages,
                     request_deserializer=chat__pb2.User.FromString,
-                    response_serializer=chat__pb2.ChatMessage.SerializeToString,
+                    response_serializer=chat__pb2.Empty.SerializeToString,
             ),
             'Login': grpc.unary_unary_rpc_method_handler(
                     servicer.Login,
@@ -175,7 +175,7 @@ class ChatServer(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/chatservice.ChatServer/CreateAccount',
-            chat__pb2.Username.SerializeToString,
+            chat__pb2.User.SerializeToString,
             chat__pb2.User.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
@@ -259,9 +259,9 @@ class ChatServer(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_stream(request, target, '/chatservice.ChatServer/DeliverMessages',
+        return grpc.experimental.unary_unary(request, target, '/chatservice.ChatServer/DeliverMessages',
             chat__pb2.User.SerializeToString,
-            chat__pb2.ChatMessage.FromString,
+            chat__pb2.Empty.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
