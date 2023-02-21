@@ -6,7 +6,7 @@ import sys
 from _thread import *
 import threading
 
-from utils import Chat, User
+from chat_service import Chat, User
 from wire_protocol import pack_packet, unpack_packet
 
 """The first argument AF_INET is the address domain of the
