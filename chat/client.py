@@ -1,15 +1,12 @@
-import socket
-import select
-import sys
-import platform
 import re
-import threading
+import socket
+import sys
 from threading import *
 
-from GRPC.client import ChatClient
+from proto.client import ChatClient
+from utils import get_server_config_from_file
 from wire.client import ReceiveMessages
 from wire.wire_protocol import pack_packet
-from utils import get_server_config_from_file
 
 YAML_CONFIG_PATH = '../config.yaml'
 ERROR_MSG = """Invalid input string, please use format <command>|<text>

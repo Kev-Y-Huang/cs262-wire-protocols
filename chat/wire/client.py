@@ -13,7 +13,7 @@ class ReceiveMessages(Thread):
         while True:
             try:
                 message = self.__server.recv(1024)
-                operation, data = unpack_packet(message)
+                _, data = unpack_packet(message)
                 print(data)
             except KeyboardInterrupt:
                 break

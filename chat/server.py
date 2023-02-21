@@ -1,20 +1,16 @@
-import grpc
 import logging
 import socket
-import select
 import sys
 import time
-
+from _thread import *
 from concurrent import futures
 
-from _thread import *
-import threading
-
-from GRPC.server import ChatServer
-import GRPC.chat_pb2_grpc as chat_pb2_grpc
+import grpc
+import proto.chat_pb2_grpc as chat_pb2_grpc
+from proto.server import ChatServer
+from utils import get_server_config_from_file
 from wire.chat_service import Chat, User
 from wire.wire_protocol import pack_packet, unpack_packet
-from utils import get_server_config_from_file
 
 YAML_CONFIG_PATH = '../config.yaml'
 
@@ -25,6 +21,7 @@ def main():
         exit()
 
     ip_address, port = get_server_config_from_file(YAML_CONFIG_PATH)
+    logging.basicConfig(format='[%(asctime)-15s]: %(message)s', level=logging.INFO)
 
     if sys.argv[1] == 'wire':
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -33,8 +30,9 @@ def main():
         server.bind((ip_address, port))
         server.listen(5)
 
-        chat_app = Chat()
+        logging.info('Starting Wire Protocol Server')
 
+        chat_app = Chat()
 
         def clientthread(conn, addr):
 
@@ -88,20 +86,19 @@ def main():
                 # that connects
                 start_new_thread(clientthread, (conn, addr))
             except KeyboardInterrupt:
+                logging.info('Stopping Server')
                 break
 
         conn.close()
         server.close()
     elif sys.argv[1] == 'grpc':
-        logging.basicConfig(format='[%(asctime)-15s]: %(message)s', level=logging.INFO)
-
         service = ChatServer()
 
         server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
         chat_pb2_grpc.add_ChatServerServicer_to_server(service, server)
 
-        logging.info('Starting Server')
-        server.add_insecure_port(f'localhost:6666')
+        logging.info('Starting GRPC Server')
+        server.add_insecure_port(f'{ip_address}:{port}')
         server.start()
 
         try:

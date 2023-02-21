@@ -1,6 +1,6 @@
 import grpc
-import GRPC.chat_pb2 as chat_pb2
-import GRPC.chat_pb2_grpc as chat_pb2_grpc
+import proto.chat_pb2 as chat_pb2
+import proto.chat_pb2_grpc as chat_pb2_grpc
 
 import threading
 

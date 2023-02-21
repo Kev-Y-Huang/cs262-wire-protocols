@@ -1,7 +1,10 @@
+import os
 import re
+
 import yaml
 
 _YAML_FILE_EXTENSION_REGEX = re.compile(r'\w+.yaml')
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 def read_yaml_config(yaml_file_path):
@@ -47,6 +50,7 @@ def get_server_config_from_yaml(yaml_data):
     return server_config['host'], server_config['port']
 
 
-def get_server_config_from_file(yaml_config_path):
-        yaml_config = read_yaml_config(yaml_config_path)
-        return get_server_config_from_yaml(yaml_config)
+def get_server_config_from_file(relative_path):
+    absolute_path = os.path.join(ROOT_DIR, relative_path)
+    yaml_config = read_yaml_config(absolute_path)
+    return get_server_config_from_yaml(yaml_config)

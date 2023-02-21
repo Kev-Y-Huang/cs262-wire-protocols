@@ -1,7 +1,7 @@
 ########################################
 # Testing the wire protocol
 ########################################
-from wire_protocol import pack_packet, unpack_packet
+from wire.wire_protocol import pack_packet, unpack_packet
 
 operation = 1
 data = "Hello, World!"
@@ -15,7 +15,7 @@ assert data == unpacked_data
 ########################################
 # Testing the chat app
 ########################################
-from utils import Chat, User
+from wire.chat_service import Chat, User
 
 chat_app = Chat()
 

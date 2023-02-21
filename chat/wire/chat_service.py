@@ -1,8 +1,7 @@
-from typing import NewType
 import re
-
-from _thread import *
 import threading
+from _thread import *
+from typing import NewType
 
 Response = NewType('response', tuple[int, str])
 

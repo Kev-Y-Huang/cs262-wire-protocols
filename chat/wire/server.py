@@ -1,11 +1,8 @@
 # Python program to implement server side of chat room.
 import socket
-import select
-import sys
 import time
 
 from _thread import *
-import threading
 
 from wire.chat_service import Chat, User
 from wire.wire_protocol import pack_packet, unpack_packet
