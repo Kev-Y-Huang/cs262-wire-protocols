@@ -2,8 +2,8 @@ import logging
 import re
 
 import grpc
-import proto.chat_pb2 as chat_pb2
-import proto.chat_pb2_grpc as chat_pb2_grpc
+import grpc_proto.chat_pb2 as chat_pb2
+import grpc_proto.chat_pb2_grpc as chat_pb2_grpc
 
 
 class ChatServer(chat_pb2_grpc.ChatServer):  # inheriting here from the protobuf rpc file which is generated

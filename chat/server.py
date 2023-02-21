@@ -6,8 +6,8 @@ from _thread import *
 from concurrent import futures
 
 import grpc
-import proto.chat_pb2_grpc as chat_pb2_grpc
-from proto.server import ChatServer
+import grpc_proto.chat_pb2_grpc as chat_pb2_grpc
+from grpc_proto.server import ChatServer
 from utils import get_server_config_from_file
 from wire.chat_service import Chat, User
 from wire.wire_protocol import pack_packet, unpack_packet

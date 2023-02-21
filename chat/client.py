@@ -3,7 +3,7 @@ import socket
 import sys
 from threading import *
 
-from proto.client import ChatClient
+from grpc_proto.client import ChatClient
 from utils import get_server_config_from_file
 from wire.client import ReceiveMessages
 from wire.wire_protocol import pack_packet
