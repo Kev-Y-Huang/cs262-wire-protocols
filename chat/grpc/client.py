@@ -25,11 +25,13 @@ class ChatClient:
 
         print("<server> Welcome to Chat!")
 
-        user = self.create_account(input("Please enter a username to create and account: "))
+        if input("Do you already have an account? ") == "yes":
+            user_id = int(input("Enter user ID of the account: "))
+            username = input("Enter username of the account: ")
+            self.login_account(user_id, username)
+        else:
+            self.create_account(input("Enter username to create account: "))
 
-        threading.Thread(target=self.check_messages(user), daemon=True, args={}).start()
-
-        
         while True:
             time.sleep(0.2)
             usr_input = input()
@@ -113,6 +115,11 @@ class ChatClient:
         self.__user = response
         self.__is_connected = True
 
+        threading.Thread(target=self.check_messages, daemon=True).start()
+
+        print(
+            f"<server> Account created with username {name} and ID {self.__user.user_id}")
+
         return response
 
     def delete_account(self):
@@ -132,7 +139,8 @@ class ChatClient:
         Returns:
             boolean: True to indicate the disconnection was successful.
         """
-        response = self.__stub.Login(chat_pb2.User(user_id=user_id, username=username))
+        response = self.__stub.Login(chat_pb2.User(
+            user_id=user_id, username=username))
         self.__user = response
         self.__is_connected = True
 
@@ -165,7 +173,8 @@ class ChatClient:
             NotConnectedError: Raised when a connection has not been made to the chat server.
         """
         if not self.__is_connected:
-            raise client_exceptions.NotConnectedError("Error: you have not connected to the chat server!")
+            raise client_exceptions.NotConnectedError(
+                "Error: you have not connected to the chat server!")
 
         return self.__stub.subscribeMessages(self.__user)
 
@@ -175,7 +184,8 @@ class ChatClient:
             NotConnectedError: Raised when a connection has not been made to the chat server.
         """
         if not self.username:
-            raise client_exceptions.NotConnectedError("Error: You are not connected to an active account.")
+            raise client_exceptions.NotConnectedError(
+                "Error: You are not connected to an active account.")
         return self.__stub.SendMessage(chat_pb2.ChatMessage(username=self.username, recip_username=send_user, message=message))
 
     def subscribe_active_users(self):
@@ -184,17 +194,19 @@ class ChatClient:
             NotConnectedError: Raised when a connection has not been made to the chat server.
         """
         if not self.__is_connected:
-            raise client_exceptions.NotConnectedError("Error: you have not connected to the chat server!")
+            raise client_exceptions.NotConnectedError(
+                "Error: you have not connected to the chat server!")
         return self.__stub.subscribeActiveUsers(self.__user)
-    
-    def check_messages(self, user):
+
+    def check_messages(self):
         """
         This method will be ran in a separate thread as the main/ui thread, because the for-in call is blocking
         when waiting for new messages
         """
-        for chat_message in self.__stub.ChatStream(chat_pb2.User(user_id=user.user_id, username=user.username)):  # this line will wait for new messages from the server!
-            print("<{}> {}".format(chat_message.username, chat_message.message))  # debugging statement
-    
+        for chat_message in self.__stub.ChatStream(chat_pb2.User(user_id=self.__user.user_id, username=self.__user.username)):  # this line will wait for new messages from the server!
+            print("<{}> {}".format(chat_message.username,
+                  chat_message.message))  # debugging statement
 
-if __name__ == "__main__":    
+
+if __name__ == "__main__":
     c = ChatClient()

@@ -15,6 +15,7 @@ class ChatServer(chat_pb2_grpc.ChatServer):  # inheriting here from the protobuf
         # List with all the chat history
         self.users = {}
         self.online_users = set()
+        self.is_connected = True
 
     def CreateAccount(self, request, context):
         if request.name in self.users:
@@ -64,10 +65,8 @@ class ChatServer(chat_pb2_grpc.ChatServer):  # inheriting here from the protobuf
             return chat_pb2.Empty()
         else:
             # if the user is online, we can send the message directly
-            print("------------------------")
             if request.recip_username in self.online_users:
                 self.users[request.recip_username]["messages"].append(request)
-                print(self.users[request.recip_username])
 
             #     send_conn = self.online_users[send_user]
             #     response = (send_conn, response_message)
@@ -90,10 +89,8 @@ class ChatServer(chat_pb2_grpc.ChatServer):  # inheriting here from the protobuf
         :return:
         """
         
-        print("111")
-        while True:
+        while self.is_connected:
             if self.users[request.username]["messages"]:
-                print("222")
                 yield self.users[request.username]["messages"].pop(0)
 
     def DeliverMessages(self, request, context):
@@ -134,4 +131,4 @@ if __name__ == '__main__':
         server.wait_for_termination()
     except KeyboardInterrupt:
         logging.info('Stopping Server')
-        service.stop_connection = True
+        service.is_connected = False
