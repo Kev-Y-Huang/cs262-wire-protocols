@@ -185,7 +185,7 @@ class Chat:
 
     def login_account(self, user: User, username: str) -> list[Response]:
         """
-        Logs in to an account given a specified username
+        Logs a user into the server
 
         Parameters
         ----------
@@ -195,18 +195,17 @@ class Chat:
         username: str
             Account username
         """
-
         conn = user.get_conn()
 
-        self.lock.acquire()
-        # if the username is not in accounts, we cannot log in
+        # Check if the username is not in accounts
         if username not in self.accounts:
-            response = (conn, f"<server> Account \"{username}\" not found")
-        # if another user is already logged in, we cannot the new user in
+            response = (conn, f'<server> Failed to login. Account "{username}" not found.')
+        # Check if another user is already logged in
         elif username in self.online_users:
-            response = (conn, f"<server> Account \"{username}\" is already logged in. You cannot log in to the same account from multiple clients.")
+            response = (conn, f'<server> Failed to login. Account "{username}" is already logged in. You cannot log in to the same account from multiple clients.')
         # otherwise, we will try to log in
         else:
+            self.lock.acquire()
             # if the user is logged-in to a different account, we need to log them out
             if user.get_name() in self.online_users:
                 del self.online_users[user.get_name()]
@@ -214,8 +213,9 @@ class Chat:
             # Updates chat app state with new account connection
             self.online_users[username] = conn
             user.set_name(username)
-            response = (conn, f"<server> Logged into \"{username}\"")
-        self.lock.release()
+            self.lock.release()
+
+            response = (conn, f'<server> Account "{username}" logged in.')
 
         return [response]
 

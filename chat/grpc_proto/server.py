@@ -103,21 +103,26 @@ class ChatServer(chat_pb2_grpc.ChatServer):
         Returns:
             User: User object
         """
-        if request.username not in self.users:
+        username = request.username
+
+        # Check if the username is not in accounts
+        if username not in self.users:
             context.set_code(grpc.StatusCode.NOT_FOUND)
             context.set_details(
-                f'No account with and username "{request.username}" found.')
+                f'Account "{username}" not found.')
             return chat_pb2.User()
 
-        if request.username in self.online_users:
+        # Check if another user is already logged in
+        if username in self.online_users:
             context.set_code(grpc.StatusCode.PERMISSION_DENIED)
             context.set_details(
-                f'You cannot login "{request.username}" currently.')
+                f'You cannot login "{username}" currently.')
             return chat_pb2.User()
 
-        self.online_users.add(request.username)
-        logging.info(f'User has logged into "{request.username}"')
-        return chat_pb2.User(username=request.username)
+        # Updates chat server state with account connection
+        self.online_users.add(username)
+        logging.info(f'User has logged into "{username}"')
+        return chat_pb2.User(username=username)
 
     def Logout(self, request, context):
         """

@@ -122,9 +122,11 @@ class ChatClient:
 
     def login_account(self, username: str):
         """
-        Disconnect from the chat server
+        Sends a Login request to the server
+        Args:
+            username: The login username
         Returns:
-            str: string to indicate the disconnection was successful.
+            str: string to indicate the login was successful.
         """
         response = self.__stub.Login(chat_pb2.User(username=username))
 
@@ -134,7 +136,8 @@ class ChatClient:
         self.__is_connected = True
 
         # Now that we are connected, start listening for messages on the chat stream
-        self.__listening_stream = self.__stub.ChatStream(chat_pb2.User(username=self.__user.username))
+        self.__listening_stream = self.__stub.ChatStream(
+            chat_pb2.User(username=self.__user.username))
         threading.Thread(target=self.check_messages, daemon=True).start()
 
         # return statement for unit testing verification
