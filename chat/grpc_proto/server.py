@@ -147,9 +147,12 @@ class ChatServer(chat_pb2_grpc.ChatServer):
         :param context:
         :return:
         """
-        logging.info(f'ChatStream initialized for "{request.username}"')        
-        while self.is_connected:
-            if request.username in self.online_users and self.users[request.username]["messages"]:
+        logging.info(f'ChatStream initialized for "{request.username}"')
+        
+        # If the user is not online, we cannot send them messages
+        while self.is_connected and request.username in self.online_users:
+            # Send messages to the user if they exist
+            while self.users[request.username]["messages"]:
                 yield self.users[request.username]["messages"].pop(0)
 
     def DeliverMessages(self, request, context):

@@ -119,9 +119,6 @@ class ChatClient:
         self.__user = None
         self.__is_connected = False
 
-        # We are no longer connected, so stop listening for messages
-        self.__listening_stream.cancel()
-
         # return statement for unit testing verification
         return f'<server> Account "{self.username}" deleted.'
 
@@ -157,9 +154,6 @@ class ChatClient:
 
         self.__user = None
         self.__is_connected = False
-
-        # We are no longer connected, so stop listening for messages
-        self.__listening_stream.cancel()
 
         # return statement for unit testing verification
         return f'<server> Account "{username}" logged out.'
@@ -197,13 +191,8 @@ class ChatClient:
         This method will be ran in a separate thread as the main/ui thread, because the for-in call is blocking
         when waiting for new messages
         """
-        try:
-            for chat_message in self.__listening_stream:  # this line will wait for new messages from the server!
-                print(f"<{chat_message.username}> {chat_message.message}")  # debugging statement
-        except grpc.RpcError as rpc_error:
-            # When the stream is cancelled, the server will send a CANCELLED error which we want to ignore
-            if rpc_error.code() == grpc.StatusCode.CANCELLED:
-                pass
+        for chat_message in self.__listening_stream:  # this line will wait for new messages from the server!
+            print(f"<{chat_message.username}> {chat_message.message}")  # debugging statement
 
     def deliver_undelivered(self):
         self.__stub.DeliverMessages(self.__user)
