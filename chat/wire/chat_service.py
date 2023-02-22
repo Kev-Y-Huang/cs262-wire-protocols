@@ -235,7 +235,7 @@ class Chat:
         conn = user.get_conn()
         to_logout = user.get_name()
 
-        # Checks if the user is logged in
+        # Checks if the user is logged in or exists
         if to_logout not in self.accounts or to_logout not in self.online_users:
             return [(conn, f"<server> Failed to logout. You are not logged in, or account \"{to_logout}\" does not exist.")]
 
@@ -262,14 +262,14 @@ class Chat:
 
         self.lock.acquire()
         if to_delete not in self.accounts or to_delete not in self.online_users:
-            return [(conn, f"<server> You are not logged in, or account \"{to_delete}\" does not exist. Failed to delete")]
+            return [(conn, f"<server> Failed to delete. You are not logged in, or account \"{to_delete}\" does not exist.")]
         else:
             del self.accounts[to_delete]
             del self.online_users[to_delete]
         self.lock.release()
 
         user.set_name()
-        return [(conn, f"<server> Account \"{to_delete}\" deleted. You have been logged out")]
+        return [(conn, f"<server> Account \"{to_delete}\" deleted.")]
 
     def send_message(self, user: User, send_user: str, message: str) -> list[Response]:
         """

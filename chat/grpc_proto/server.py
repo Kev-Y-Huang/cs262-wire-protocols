@@ -150,16 +150,20 @@ class ChatServer(chat_pb2_grpc.ChatServer):
         Returns:
             User: User object     
         '''
+        username = request.username
 
-        if request.username not in self.users:
+        # Checks if the user is logged in or exists
+        if username not in self.online_users or username not in self.users:
             context.set_code(grpc.StatusCode.NOT_FOUND)
             context.set_details(
-                f'No account found with username "{request.username}".')
+                f'You are not logged in, or account "{username}" does not exist.')
             return chat_pb2.User()
-        del self.users[request.username]
-        self.online_users.remove(request.username)
-        logging.info(f'User "{request.username}" has been deleted')
-        return chat_pb2.User(username=request.username)
+        
+        # Deletes the user from the online users and the users dictionary
+        del self.users[username]
+        self.online_users.remove(username)
+        logging.info(f'User "{username}" has been deleted')
+        return chat_pb2.User(username=username)
 
     def SendMessage(self, request, context):
         '''

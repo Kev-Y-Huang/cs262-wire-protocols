@@ -106,7 +106,7 @@ assert chat_app.accounts == {"user1": [], "user2": [], "user3": []}
 # Deleting an account in the chat app
 assert chat_app.online_users == {"user1": None, "user2": None, "user3": None}
 assert chat_app.accounts == {"user1": [], "user2": [], "user3": []}
-assert chat_app.delete_account(user1) == [(None, '<server> Account "user1" deleted. You have been logged out')]
+assert chat_app.delete_account(user1) == [(None, '<server> Account "user1" deleted.')]
 assert chat_app.online_users == {"user2": None, "user3": None}
 assert chat_app.accounts == {"user2": [], "user3": []}
 

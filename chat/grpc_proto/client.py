@@ -161,9 +161,9 @@ class ChatClient:
 
     def delete_account(self):
         """
-        Disconnect from the chat server
+        Sends a DeleteAccount request to the server
         Returns:
-            str: string to indicate the disconnection was successful.
+            str: string to indicate the deletion was successful.
         """
         self.__stub.DeleteAccount(self.__user)
 
