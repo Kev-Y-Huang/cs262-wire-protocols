@@ -72,7 +72,7 @@ assert chat_app.login_account(user1, "user1") == [(None, '<server> Failed to log
 assert chat_app.online_users == {"user1": None, "user2": None}
 
 # Logging out of an account in the chat app
-assert chat_app.logout_account(user1) == [(None, '<server> Logged out of "user1"')]
+assert chat_app.logout_account(user1) == [(None, '<server> Account "user1" logged out.')]
 assert chat_app.online_users == {"user2": None}
 assert chat_app.accounts == {"user1": [], "user2": []}
 
@@ -89,7 +89,7 @@ assert chat_app.send_message(user1, "user3", "Hello, user3!") == [(None, '<serve
 # Sending a message to an offline account in the chat app
 user3 = User(None)
 assert chat_app.create_account(user3, "user3") == [(None, '<server> Account created with username "user3".')]
-assert chat_app.logout_account(user3) == [(None, '<server> Logged out of "user3"')]
+assert chat_app.logout_account(user3) == [(None, '<server> Account "user3" logged out.')]
 assert chat_app.send_message(user1, "user3", "Hello, user3!") == [(None, '<server> Account "user3" not online. Message queued to send')]
 assert chat_app.accounts == {"user1": [], "user2": [], "user3": ['<user1> Hello, user3!']}
 

@@ -130,9 +130,19 @@ class ChatServer(chat_pb2_grpc.ChatServer):
         Returns:
             User: User object
         """
-        self.online_users.remove(request.username)
-        logging.info(f'User has logged out of "{request.username}"')
-        return chat_pb2.User(username=request.username)
+        username = request.username
+
+        # Checks if the user is logged in
+        if username not in self.users or username not in self.online_users:
+            context.set_code(grpc.StatusCode.NOT_FOUND)
+            context.set_details(
+                f'You are not logged in, or account "{username}" does not exist.')
+            return chat_pb2.User()
+
+        # Deletes the user from the online users
+        self.online_users.remove(username)
+        logging.info(f'User has logged out of "{username}"')
+        return chat_pb2.User(username=username)
 
     def DeleteAccount(self, request, context):
         '''

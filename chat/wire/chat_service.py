@@ -221,7 +221,7 @@ class Chat:
 
     def logout_account(self, user: User) -> list[Response]:
         """
-        Logs the user out of the account given a specified username
+        Logs a user out of the server
 
         Parameters
         ----------
@@ -235,15 +235,17 @@ class Chat:
         conn = user.get_conn()
         to_logout = user.get_name()
 
+        # Checks if the user is logged in
         if to_logout not in self.accounts or to_logout not in self.online_users:
-            return [(conn, f"<server> You are not logged in, or account \"{to_logout}\" does not exist. Failed to logout")]
+            return [(conn, f"<server> Failed to logout. You are not logged in, or account \"{to_logout}\" does not exist.")]
 
+        # Deletes the user from the online users
         self.lock.acquire()
         del self.online_users[user.get_name()]
         self.lock.release()
 
         user.set_name()
-        return [(conn, f"<server> Logged out of \"{to_logout}\"")]
+        return [(conn, f"<server> Account \"{to_logout}\" logged out.")]
 
     def delete_account(self, user: User) -> list[Response]:
         """

@@ -145,7 +145,7 @@ class ChatClient:
 
     def logout_account(self):
         """
-        Logout from the chat server
+        Sends a Logout request to the server
         Returns:
             str: string to indicate the logout was successful.
         """
