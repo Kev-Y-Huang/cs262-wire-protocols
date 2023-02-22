@@ -1,7 +1,11 @@
 ########################################
 # Testing the wire protocol
 ########################################
+print("****************************************")
+print("***** Testing the wire protocol... *****")
+print("****************************************")
 from wire.wire_protocol import pack_packet, unpack_packet
+import time
 
 operation = 1
 data = "Hello, World!"
@@ -11,10 +15,17 @@ unpacked_operation, unpacked_data = unpack_packet(packet)
 assert operation == unpacked_operation
 assert data == unpacked_data
 
+print("*****************************************")
+print("***** Done testing wire protocol... *****")
+print("*****************************************")
 
 ########################################
-# Testing the chat app
+# Testing the wire protocol chat app
 ########################################
+
+print("*************************************************")
+print("***** Testing the wire protocol chat app... *****")
+print("*************************************************")
 from wire.chat_service import Chat, User
 
 chat_app = Chat()
@@ -96,4 +107,60 @@ assert chat_app.delete_account(user1) == [(None, '<server> Account "user1" delet
 assert chat_app.online_users == {"user2": None, "user3": None}
 assert chat_app.accounts == {"user2": [], "user3": []}
 
-print("All tests passed!")
+print("******************************************************")
+print("***** Done testing the wire protocol chat app... *****")
+print("******************************************************")
+
+########################################
+# Testing the GRPC chat app
+########################################
+
+print("****************************************")
+print("***** Testing the GRPC chat app... *****")
+print("****************************************")
+
+from grpc_proto.client import ChatClient
+import grpc
+import grpc_proto.chat_pb2_grpc as chat_pb2_grpc
+from grpc_proto.server import ChatServer
+from concurrent import futures
+
+service = ChatServer()
+
+server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+chat_pb2_grpc.add_ChatServerServicer_to_server(service, server)
+server.add_insecure_port('127.0.0.1:6666')
+server.start()
+
+client = ChatClient("127.0.0.1", 6666)
+
+
+# Test creating a user
+assert client.create_account("user1") == "<server> Account created with username \"user1\"."
+
+# Test logging out of a user
+assert client.logout_account() == "<server> Account \"user1\" logged out."
+
+# Test sending a message
+assert client.create_account("user2") == "<server> Account created with username \"user2\"."
+assert client.send_message("user1", "Hello, user1!") == "Message sent."
+
+# Test logging in to a user
+assert client.logout_account() == "<server> Account \"user2\" logged out."
+
+# Test getting all queued messages
+assert client.login_account("user1") == "<server> Account \"user1\" logged in."
+assert client.deliver_undelivered() == "Undelivered messages delivered."
+
+# Test listing all accounts
+assert client.list_accounts("") == "<server> All Accounts: [\'user1\', \'user2\']"
+
+# Disconnect the server
+service.is_connected = False
+
+time.sleep(0.5)
+print("*********************************************")
+print("***** Done testing the GRPC chat app... *****")
+print("*********************************************")
+print("\nAll tests passed!")
+

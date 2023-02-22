@@ -83,7 +83,7 @@ class ChatClient:
         print(
             f'<server> Account created with username "{username}".')
 
-        return response
+        return f'<server> Account created with username "{username}".'
 
     def delete_account(self):
         """Disconnect from the chat server
@@ -96,7 +96,8 @@ class ChatClient:
 
         self.__user = None
 
-        return True
+        # return statement for unit testing verification
+        return f'<server> Account "{self.username}" deleted.'
 
     def login_account(self, username: str):
         """Disconnect from the chat server
@@ -110,7 +111,8 @@ class ChatClient:
         self.__user = response
         self.__is_connected = True
 
-        return response
+        # return statement for unit testing verification
+        return f'<server> Account "{self.username}" logged in.'
 
     def logout_account(self):
         """Disconnect from the chat server
@@ -118,12 +120,14 @@ class ChatClient:
             boolean: True to indicate the disconnection was successful.
         """
         self.__stub.Logout(self.__user)
-
         print(f'<server> Account "{self.username}" logged out.')
-
+        username = self.username
+        
         self.__user = None
         self.__is_connected = False
-        return True
+
+        # return statement for unit testing verification
+        return f'<server> Account "{username}" logged out.'
 
     def list_accounts(self, wildcard: str):
         """Disconnect from the chat server
@@ -135,14 +139,18 @@ class ChatClient:
 
         print(f"<server> All Accounts: {str(response.usernames)}")
 
-        return True
+        # return statement for unit testing verification
+        return f"<server> All Accounts: {str(response.usernames)}"
 
     def send_message(self, send_user: str, message: str):
         """Send a message to the chat server
         Raises:
             NotConnectedError: Raised when a connection has not been made to the chat server.
         """
-        return self.__stub.SendMessage(chat_pb2.ChatMessage(username=self.username, recip_username=send_user, message=message))
+        self.__stub.SendMessage(chat_pb2.ChatMessage(username=self.username, recip_username=send_user, message=message))
+        
+        # return statement for unit testing verification
+        return "Message sent."
 
     def check_messages(self):
         """
@@ -155,4 +163,6 @@ class ChatClient:
 
     def deliver_undelivered(self):
         self.__stub.DeliverMessages(self.__user)
-        return True
+
+        # return statement for unit testing verification
+        return "Undelivered messages delivered."
