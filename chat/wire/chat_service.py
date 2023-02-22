@@ -231,7 +231,6 @@ class Chat:
         username: str
             Account username
         """
-
         conn = user.get_conn()
         to_logout = user.get_name()
 
@@ -256,7 +255,6 @@ class Chat:
         user: User
             User information
         """
-
         conn = user.get_conn()
         to_delete = user.get_name()
 
@@ -273,7 +271,7 @@ class Chat:
 
     def send_message(self, user: User, send_user: str, message: str) -> list[Response]:
         """
-        Logs in to an account given a specified username
+        Sends a message to a specified user
 
         Parameters
         ----------
@@ -286,24 +284,23 @@ class Chat:
         message: str
             Chat message
         """
-
         conn = user.get_conn()
 
         self.lock.acquire()
-        # if the username does not exist, we cannot send the message
+        # Check if the username does not exist
         if send_user not in self.accounts:
             response = (
-                conn, f"<server> Account \"{send_user}\" does not exist. Failed to send")
+                conn, f"<server> Failed to send. Account \"{send_user}\" does not exist.")
         else:
-            # if the user is online, we can send the message directly
+            # send the message directly if the user is online
             response_message = f"<{user.get_name()}> {message}"
             if send_user in self.online_users:
                 send_conn = self.online_users[send_user]
                 response = (send_conn, response_message)
+            # queue the message if the user is not online
             else:
-                # if they are not online, we need to queue the message, and then let
-                # the current user message know that the messaged is queued to send
                 self.accounts[send_user].append(response_message)
+                # let the current user know that the message is queued to send
                 response = (
                     conn, f"<server> Account \"{send_user}\" not online. Message queued to send")
         self.lock.release()

@@ -158,7 +158,7 @@ class ChatServer(chat_pb2_grpc.ChatServer):
             context.set_details(
                 f'You are not logged in, or account "{username}" does not exist.')
             return chat_pb2.User()
-        
+
         # Deletes the user from the online users and the users dictionary
         del self.users[username]
         self.online_users.remove(username)
@@ -167,26 +167,25 @@ class ChatServer(chat_pb2_grpc.ChatServer):
 
     def SendMessage(self, request, context):
         '''
-        Sends a message to a user
+        Sends a message to a specified user
         Returns:
             Empty: Empty object
         '''
-        # if the username does not exist, we cannot send the message
-        if request.username not in self.users:
+        recip_username = request.recip_username
+
+        # Check if the username does not exist
+        if recip_username not in self.users:
             context.set_code(grpc.StatusCode.NOT_FOUND)
-            context.set_details(
-                f'Account {request.username} does not exist. Failed to send.')
+            context.set_details(f'Account {recip_username} does not exist.')
             return chat_pb2.Empty()
+        # send the message directly if the user is online
+        elif recip_username in self.online_users:
+            self.users[recip_username]["messages"].append(request)
+            logging.info(f'Message sent to "{recip_username}"')
+        # queue the message if the user is not online
         else:
-            # if the user is online, we can send the message directly
-            if request.recip_username in self.online_users:
-                self.users[request.recip_username]["messages"].append(request)
-                logging.info(f'Message sent to "{request.recip_username}"')
-            else:
-                # if they are not online, we need to queue the message, and then let
-                # the current user message know that the messaged is queued to send
-                self.users[request.recip_username]["queue"].append(request)
-                logging.info(f'Message queued for "{request.recip_username}"')
+            self.users[recip_username]["queue"].append(request)
+            logging.info(f'Message queued for "{recip_username}"')
 
         return chat_pb2.Empty()
 
