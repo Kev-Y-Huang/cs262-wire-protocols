@@ -119,7 +119,7 @@ class Chat:
 
     def list_accounts(self, user: User, exp: str = "\S*") -> list[Response]:
         """
-        Prints out the accounts created to current connected port
+        List all accounts on the chat server
 
         Parameters
         ----------
@@ -134,20 +134,16 @@ class Chat:
 
         # Checks if the passed-in expression is a valid regex pattern
         try:
-            filter = re.compile(exp)
+            pattern = re.compile(exp)
         except:
             return [(conn, f"<server> {exp} is not a valid regex pattern.")]
 
-        accounts_to_list = []
-
+        # Filters all usernames based on the passed in regex pattern
         self.lock.acquire()
-        # Filters all usernames based on regex pattern
-        for account in self.accounts:
-            if filter.match(account):
-                accounts_to_list.append(account)
+        list_of_usernames = list(filter(pattern.match, self.accounts))
         self.lock.release()
 
-        return [(conn, f"<server> List of accounts: {str(accounts_to_list)}")]
+        return [(conn, f"<server> List of accounts: {str(list_of_usernames)}")]
 
     def create_account(self, user: User, username: str) -> list[Response]:
         """
