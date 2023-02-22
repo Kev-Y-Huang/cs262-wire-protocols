@@ -2,7 +2,7 @@
 
 ## Key Decisions and Justifications
 
-### Wire protocol design
+### Wire Protocol Design
 
 We decided design our wire protocol to use user operation codes to handle user input. We decided to use operation codes because it was a straight forward way to handle user input that was clear to the user. We used the pipe character "|" to separate the operation code from the rest of the user input. An error message would be broadcast to any user that did not input the correct format that specified the correct format to the user, as seen below.
 
@@ -17,9 +17,11 @@ Format: <command>|<text>
 6|                  -> deliver all unsent messages to current user
 ```
 
-The general form of our wire protocol is a 4-byte unsigned integer operation code, followed by a pipe character, followed by the relevant information in each particular request. We encode the whole packet using `utf-8` before sending across a socket. We chose to use `utf-8` because it is the most common encoding used for text, and it is the default encoding for Python. We chose to use a 4-byte unsigned integer for the operation code because it gave us the flexibility to add more potential operations in the future. 
+The general form of our wire protocol is a 4-byte unsigned integer operation code, followed by a pipe character, followed by the relevant information in each particular request. We encode the whole packet using `utf-8` before sending across a socket. We chose to use `utf-8` because it is the most common encoding used for text, and it is the default encoding for Python. We chose to use a 4-byte unsigned integer for the operation code because it gave us the flexibility to add more potential operations in the future.
 
-### Wire Protocol Design
+We also decided to limit the length of the message to 280 characters. We chose these limits because we wanted to make sure that the username and message would fit in the 1024 byte buffer we used for our socket and remove any potential edge cases that could arise from having a message that was too long.
+
+### Wire Protocol Threading
 
 For our wire protocol implementation, we decided to use threading in the server to handle multiple clients at once. We used locks to ensure that all threads inside of the server could alter the data when one thread was trying to access it. 
 
@@ -67,8 +69,8 @@ Sending individual messages across our wire protocol took aroudn 1e-05 seconds, 
 
 ### Buffer Size
 
-The buffer size were similar. For example, for a message "test" sent across gRPC from user "1" to user "2", gRPC would send a message of size 57 bytes, while the wire protocol would send a message of size 13 bytes. Other combinations of users and messages performed similarly. This is likely due to the fact that gRPC doesn't necessarily have the potential inefficiencies like our wire protocol does. One potential inefficiency in our wire protocol implementation was our use of 4 bytes for opcodes that were only 1 byte long (0, 1, 2, ...). GRPC likely handles this inefficiency for us, and thus we see smaller buffer sizes for it.
- 
+The buffer size were similar. For example, for a message "test" sent across gRPC from user "1" to user "2", gRPC would send a message of size 57 bytes, while the wire protocol would send a message of size 13 bytes. Other combinations of users and messages performed similarly. This is likely due to the fact that gRPC doesn't necessarily have the potential inefficiencies like our wire protocol does. One potential inefficiency in our wire protocol implementation was our use of 4 bytes for opcodes that were only 1 byte long (0, 1, 2, ...). GRPC likely handles this inefficiency for us, and thus we see smaller buffer sizes for it. In addition, we also set a limit of 280 characters for our wire protocol implementation, whereas GRPC does not have this limit. 
+
 ## Working Log
 
 

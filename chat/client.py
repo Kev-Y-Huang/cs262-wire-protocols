@@ -9,7 +9,7 @@ from wire.wire_protocol import pack_packet
 
 # global variables
 YAML_CONFIG_PATH = '../config.yaml'
-ERROR_MSG = """Invalid input string, please use format <command>|<text>
+ERROR_MSG = """Invalid input string, please use format <command>|<text>. Total input size must be less than 280 characters.
     0|                  -> list user accounts
     1|<username>        -> create an account with name username
     2|<username>        -> login to an account with name username
@@ -46,7 +46,9 @@ def main():
                 if usr_input != '':
                     # Parses the user input to see if it is a valid input
                     match = re.match(r"(\d)\|((\S| )*)", usr_input)
-                    if match:
+                    # Check if the input is valid and less than 280 characters
+                    # 2 + 280 for the op_code and pipe character
+                    if match and len(usr_input) < 282:
                         # Parse the user input into op_code and content
                         op_code, content = int(match.group(1)), match.group(2)
                         output = pack_packet(op_code, content)
