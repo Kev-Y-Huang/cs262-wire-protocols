@@ -177,17 +177,17 @@ class ChatServer(chat_pb2_grpc.ChatServer):
         if recip_username not in self.users:
             context.set_code(grpc.StatusCode.NOT_FOUND)
             context.set_details(f'Account {recip_username} does not exist.')
-            return chat_pb2.Empty()
+            return chat_pb2.MessageStatus()
         # send the message directly if the user is online
         elif recip_username in self.online_users:
             self.users[recip_username]["messages"].append(request)
             logging.info(f'Message sent to "{recip_username}"')
+            return chat_pb2.MessageStatus(status=1)
         # queue the message if the user is not online
         else:
             self.users[recip_username]["queue"].append(request)
             logging.info(f'Message queued for "{recip_username}"')
-
-        return chat_pb2.Empty()
+            return chat_pb2.MessageStatus(status=0)
 
     def DeliverMessages(self, request, context):
         """

@@ -125,7 +125,7 @@ class Chat:
         ----------
         user: User
             User information
-        
+
         exp: str
             Regex expression to filter accounts
         """
@@ -153,7 +153,7 @@ class Chat:
         ----------
         user: User
             User information
-        
+
         username: str
             Username for the new account
         """
@@ -162,7 +162,7 @@ class Chat:
         # Checks if the passed-in username is valid
         if " " in username or "|" in username:
             return [(conn, '<server> Failed to create account. Username cannot have " " or "|".')]
-        
+
         # Checks if the username is empty
         if "" == username:
             return [(conn, '<server> Failed to create account. Username cannot be empty.')]
@@ -179,7 +179,8 @@ class Chat:
             user.set_name(username)
             self.lock.release()
 
-            response = (conn, f'<server> Account created with username "{username}".')
+            response = (
+                conn, f'<server> Account created with username "{username}".')
 
         return [response]
 
@@ -191,7 +192,7 @@ class Chat:
         ----------
         user: User
             User information
-        
+
         username: str
             Account username
         """
@@ -199,10 +200,12 @@ class Chat:
 
         # Check if the username is not in accounts
         if username not in self.accounts:
-            response = (conn, f'<server> Failed to login. Account "{username}" not found.')
+            response = (
+                conn, f'<server> Failed to login. Account "{username}" not found.')
         # Check if another user is already logged in
         elif username in self.online_users:
-            response = (conn, f'<server> Failed to login. Account "{username}" is already logged in. You cannot log in to the same account from multiple clients.')
+            response = (
+                conn, f'<server> Failed to login. Account "{username}" is already logged in. You cannot log in to the same account from multiple clients.')
         # otherwise, we will try to log in
         else:
             self.lock.acquire()
@@ -227,7 +230,7 @@ class Chat:
         ----------
         user: User
             User information
-        
+
         username: str
             Account username
         """
@@ -289,23 +292,24 @@ class Chat:
         self.lock.acquire()
         # Check if the username does not exist
         if send_user not in self.accounts:
-            response = (
-                conn, f"<server> Failed to send. Account \"{send_user}\" does not exist.")
+            response = [(
+                conn, f"<server> Failed to send. Account \"{send_user}\" does not exist.")]
         else:
             # send the message directly if the user is online
             response_message = f"<{user.get_name()}> {message}"
             if send_user in self.online_users:
                 send_conn = self.online_users[send_user]
-                response = (send_conn, response_message)
+                response = [(send_conn, response_message),
+                            (conn, f"<server> Message sent to \"{send_user}\".")]
             # queue the message if the user is not online
             else:
                 self.accounts[send_user].append(response_message)
                 # let the current user know that the message is queued to send
-                response = (
-                    conn, f"<server> Account \"{send_user}\" not online. Message queued to send")
+                response = [(
+                    conn, f"<server> Account \"{send_user}\" not online. Message queued to send")]
         self.lock.release()
 
-        return [response]
+        return response
 
     def deliver_undelivered(self, user: User) -> list[Response]:
         """

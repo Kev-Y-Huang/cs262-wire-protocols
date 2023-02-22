@@ -183,10 +183,14 @@ class ChatClient:
         Returns:
             str: string to indicate the message was sent successfully.
         """
-        self.__stub.SendMessage(chat_pb2.ChatMessage(
+        response = self.__stub.SendMessage(chat_pb2.ChatMessage(
             username=self.username, recip_username=send_user, message=message))
-
-        print("<server> Message sent to user. If user is offline, the message has been queued to deliver.")
+        
+        # Check if the message was sent successfully or if it was queued
+        if response.status == 1:
+            print(f"<server> Message sent to \"{send_user}\".")
+        else:
+            print(f"<server> Account \"{send_user}\" not online. Message queued to send.")
 
         # return statement for unit testing verification
         return "Message sent."

@@ -81,7 +81,7 @@ assert chat_app.login_account(user1, "user1") == [(None, '<server> Account "user
 assert chat_app.online_users == {"user1": None, "user2": None}
 
 # Sending a message in the chat app
-assert chat_app.send_message(user1, "user2", "Hello, user2!") == [(None, '<user1> Hello, user2!')]
+assert chat_app.send_message(user1, "user2", "Hello, user2!") == [(None, '<user1> Hello, user2!'), (None, '<server> Message sent to "user2".')]
 
 # Sending a message to an invalid account in the chat app
 assert chat_app.send_message(user1, "user3", "Hello, user3!") == [(None, '<server> Failed to send. Account "user3" does not exist.')]
