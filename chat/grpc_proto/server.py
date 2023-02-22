@@ -195,9 +195,13 @@ class ChatServer(chat_pb2_grpc.ChatServer):
         Returns:
             Empty: Empty object
         """
+        # Dump all queued messages into the user's message list
         queue = self.users[request.username]["queue"]
         self.users[request.username]["messages"].extend(queue)
+
+        # Clear the queue
         self.users[request.username]["queue"] = []
+        
         logging.info(f'All queued messages delivered to "{request.username}"')
         return chat_pb2.Empty()
 

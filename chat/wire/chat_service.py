@@ -316,17 +316,17 @@ class Chat:
         user: User
             User information 
         """
-
         conn = user.get_conn()
 
         self.lock.acquire()
+        # get all queued messages for the user formatted correctly
         responses = [(conn, message)
                      for message in self.accounts[user.get_name()]]
+        # clear the queue
         self.accounts[user.get_name()] = []
         self.lock.release()
 
-        # if there were no queued messages, then the messages string will remain empty
-        # and we should send a message to the current conection
+        # notify user if there were no queued messages
         if len(responses) == 0:
             return [(conn, "<server> No messages queued")]
         else:
