@@ -2,7 +2,7 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-import chat_pb2 as chat__pb2
+import grpc_proto.chat_pb2 as chat__pb2
 
 
 class ChatServerStub(object):
