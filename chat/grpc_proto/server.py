@@ -40,7 +40,30 @@ class ChatServer(chat_pb2_grpc.ChatServer):
     def server_message(self, recip_username, message):
         chat_message = {"username": "server", "message": message}
         self.users[recip_username]["messages"].append(chat_message)
-    
+
+    def ListAccounts(self, request, context):
+        '''
+        Lists an accounts with the given regex pattern
+        Returns:
+            ListofUsernames: ListofUsernames object  
+        '''
+        # Checks if the passed-in expression is a valid regex pattern
+        try:
+            filter = re.compile(request.wildcard)
+        except:
+            context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
+            context.set_details(
+                f'"{request.wildcard}" is not a valid regex pattern.')
+            return chat_pb2.ListofUsernames()
+
+        list_of_usernames = chat_pb2.ListofUsernames()
+
+        for username in self.users:
+            if filter.match(username):
+                list_of_usernames.usernames.append(username)
+
+        return list_of_usernames
+
     def CreateAccount(self, request, context):
         '''
         Creates an account with the given username
@@ -67,13 +90,43 @@ class ChatServer(chat_pb2_grpc.ChatServer):
                 f'"{request.wildcard}" is already in use. Please select another username.')
             return chat_pb2.ListofUsernames()
 
-
         # Creates the account
         self.users[request.username] = {"messages": [], "queue": []}
         self.online_users.add(request.username)
         logging.info(f'User "{request.username}" has been created')
         return chat_pb2.User(username=request.username)
 
+    def Login(self, request, context):
+        """
+        Logs a user into the server
+        Returns:
+            User: User object
+        """
+        if request.username not in self.users:
+            context.set_code(grpc.StatusCode.NOT_FOUND)
+            context.set_details(
+                f'No account with and username "{request.username}" found.')
+            return chat_pb2.User()
+
+        if request.username in self.online_users:
+            context.set_code(grpc.StatusCode.PERMISSION_DENIED)
+            context.set_details(
+                f'You cannot login "{request.username}" currently.')
+            return chat_pb2.User()
+
+        self.online_users.add(request.username)
+        logging.info(f'User has logged into "{request.username}"')
+        return chat_pb2.User(username=request.username)
+
+    def Logout(self, request, context):
+        """
+        Logs a user out of the server
+        Returns:
+            User: User object
+        """
+        self.online_users.remove(request.username)
+        logging.info(f'User has logged out of "{request.username}"')
+        return chat_pb2.User(username=request.username)
 
     def DeleteAccount(self, request, context):
         '''
@@ -92,28 +145,6 @@ class ChatServer(chat_pb2_grpc.ChatServer):
         logging.info(f'User "{request.username}" has been deleted')
         return chat_pb2.User(username=request.username)
 
-    def ListAccounts(self, request, context):
-        '''
-        Lists an accounts with the given regex pattern
-        Returns:
-            ListofUsernames: ListofUsernames object  
-        '''
-        # Checks if the passed-in expression is a valid regex pattern
-        try:
-            filter = re.compile(request.wildcard)
-        except:
-            context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
-            context.set_details(f'"{request.wildcard}" is not a valid regex pattern.')
-            return chat_pb2.ListofUsernames()
-
-        list_of_usernames = chat_pb2.ListofUsernames()
-
-        for username in self.users:
-            if filter.match(username):
-                list_of_usernames.usernames.append(username)
-
-        return list_of_usernames
-
     def SendMessage(self, request, context):
         '''
         Sends a message to a user
@@ -123,7 +154,8 @@ class ChatServer(chat_pb2_grpc.ChatServer):
         # if the username does not exist, we cannot send the message
         if request.username not in self.users:
             context.set_code(grpc.StatusCode.NOT_FOUND)
-            context.set_details(f'Account {request.username} does not exist. Failed to send.')
+            context.set_details(
+                f'Account {request.username} does not exist. Failed to send.')
             return chat_pb2.Empty()
         else:
             # if the user is online, we can send the message directly
@@ -137,23 +169,6 @@ class ChatServer(chat_pb2_grpc.ChatServer):
                 logging.info(f'Message queued for "{request.recip_username}"')
 
         return chat_pb2.Empty()
-    
-    def ChatStream(self, request, context):
-        """
-        This is a response-stream type call. This means the server can keep sending messages
-        Every client opens this connection and waits for server to send new messages
-
-        :param request_iterator:
-        :param context:
-        :return:
-        """
-        logging.info(f'ChatStream initialized for "{request.username}"')
-        
-        # If the user is not online, we cannot send them messages
-        while self.is_connected and request.username in self.online_users:
-            # Send messages to the user if they exist
-            while self.users[request.username]["messages"]:
-                yield self.users[request.username]["messages"].pop(0)
 
     def DeliverMessages(self, request, context):
         """
@@ -167,34 +182,19 @@ class ChatServer(chat_pb2_grpc.ChatServer):
         logging.info(f'All queued messages delivered to "{request.username}"')
         return chat_pb2.Empty()
 
-    def Login(self, request, context):
+    def ChatStream(self, request, context):
         """
-        Logs a user into the server
-        Returns:
-            User: User object
-        """
-        if request.username not in self.users:
-            context.set_code(grpc.StatusCode.NOT_FOUND)
-            context.set_details(
-                f'No account with and username "{request.username}" found.')
-            return chat_pb2.User()
-        
-        if request.username in self.online_users:
-            context.set_code(grpc.StatusCode.PERMISSION_DENIED)
-            context.set_details(
-                f'You cannot login "{request.username}" currently.')
-            return chat_pb2.User()
-        
-        self.online_users.add(request.username)
-        logging.info(f'User has logged into "{request.username}"')
-        return chat_pb2.User(username=request.username)
+        This is a response-stream type call. This means the server can keep sending messages
+        Every client opens this connection and waits for server to send new messages
 
-    def Logout(self, request, context):
+        :param request_iterator:
+        :param context:
+        :return:
         """
-        Logs a user out of the server
-        Returns:
-            User: User object
-        """
-        self.online_users.remove(request.username)
-        logging.info(f'User has logged out of "{request.username}"')
-        return chat_pb2.User(username=request.username)
+        logging.info(f'ChatStream initialized for "{request.username}"')
+
+        # If the user is not online, we cannot send them messages
+        while self.is_connected and request.username in self.online_users:
+            # Send messages to the user if they exist
+            while self.users[request.username]["messages"]:
+                yield self.users[request.username]["messages"].pop(0)

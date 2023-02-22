@@ -59,7 +59,7 @@ class ChatClient:
                     # if the message is not in the correct format
                     # print an error message
                     else:
-                        print(f"<server> Invalid input: {content}")
+                        print(f"<server> Invalid input: {content}.")
                 # op code to deliver undelivered messages
                 elif op_code == 6:
                     self.deliver_undelivered()
@@ -86,6 +86,20 @@ class ChatClient:
             return None
         return self.__user.username
 
+    def list_accounts(self, wildcard: str):
+        """
+        List all accounts on the chat server
+        Returns:
+            str: string to indicate listing accounts was successful.
+        """
+        response = self.__stub.ListAccounts(
+            chat_pb2.Wildcard(wildcard=wildcard))
+
+        print(f"<server> All Accounts: {str(response.usernames)}")
+
+        # return statement for unit testing verification
+        return f"<server> All Accounts: {str(response.usernames)}"
+
     def create_account(self, username: str):
         """
         Connect to the chat server
@@ -105,22 +119,6 @@ class ChatClient:
             f'<server> Account created with username "{username}".')
 
         return f'<server> Account created with username "{username}".'
-
-    def delete_account(self):
-        """
-        Disconnect from the chat server
-        Returns:
-            str: string to indicate the disconnection was successful.
-        """
-        self.__stub.DeleteAccount(self.__user)
-
-        print(f'<server> Account "{self.username}" deleted.')
-
-        self.__user = None
-        self.__is_connected = False
-
-        # return statement for unit testing verification
-        return f'<server> Account "{self.username}" deleted.'
 
     def login_account(self, username: str):
         """
@@ -158,19 +156,21 @@ class ChatClient:
         # return statement for unit testing verification
         return f'<server> Account "{username}" logged out.'
 
-    def list_accounts(self, wildcard: str):
+    def delete_account(self):
         """
-        List all accounts on the chat server
+        Disconnect from the chat server
         Returns:
-            str: string to indicate listing accounts was successful.
+            str: string to indicate the disconnection was successful.
         """
-        response = self.__stub.ListAccounts(
-            chat_pb2.Wildcard(wildcard=wildcard))
+        self.__stub.DeleteAccount(self.__user)
 
-        print(f"<server> All Accounts: {str(response.usernames)}")
+        print(f'<server> Account "{self.username}" deleted.')
+
+        self.__user = None
+        self.__is_connected = False
 
         # return statement for unit testing verification
-        return f"<server> All Accounts: {str(response.usernames)}"
+        return f'<server> Account "{self.username}" deleted.'
 
     def send_message(self, send_user: str, message: str):
         """
@@ -186,6 +186,12 @@ class ChatClient:
         # return statement for unit testing verification
         return "Message sent."
 
+    def deliver_undelivered(self):
+        self.__stub.DeliverMessages(self.__user)
+
+        # return statement for unit testing verification
+        return "Undelivered messages delivered."
+
     def check_messages(self):
         """
         This method will be ran in a separate thread as the main/ui thread, because the for-in call is blocking
@@ -193,9 +199,3 @@ class ChatClient:
         """
         for chat_message in self.__listening_stream:  # this line will wait for new messages from the server!
             print(f"<{chat_message.username}> {chat_message.message}")  # debugging statement
-
-    def deliver_undelivered(self):
-        self.__stub.DeliverMessages(self.__user)
-
-        # return statement for unit testing verification
-        return "Undelivered messages delivered."
