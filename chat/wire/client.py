@@ -2,6 +2,7 @@
 from threading import *
 
 from wire.wire_protocol import unpack_packet
+from utils import print_with_prompt
 
 
 class ReceiveMessages(Thread):
@@ -14,6 +15,6 @@ class ReceiveMessages(Thread):
             try:
                 message = self.__server.recv(1024)
                 _, data = unpack_packet(message)
-                print(data)
-            except KeyboardInterrupt:
+                print_with_prompt(data)
+            except:
                 break

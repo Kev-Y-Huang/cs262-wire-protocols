@@ -1,7 +1,6 @@
 import re
 import socket
 import sys
-from threading import *
 
 from grpc_proto.client import ChatClient
 from utils import get_server_config_from_file
@@ -34,26 +33,29 @@ def main():
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server.connect((ip_address, port))
 
-        t1 = ReceiveMessages(server)
-        t1.start()
+        # Separate thread for processing incomming messages from the server
+        server_listening = ReceiveMessages(server)
+        server_listening.start()
+
+        # Continuously listen for user inputs in the terminal
         while True:
-            try:
-                usr_input = input('<you> ')
-                if usr_input == "quit":
-                    sys.exit()
-                else:
-                    if usr_input != '':
-                        # Parses the user input to see if it is a valid input
-                        match = re.match(r"(\d)\|((\S| )*)", usr_input)
-                        if match:
-                            op_code, message = int(match.group(1)), match.group(2)
-                            output = pack_packet(op_code, message)
-                            server.send(output)
-                        else:
-                            print(ERROR_MSG)
-            except KeyboardInterrupt:
+            usr_input = input('<you> ')
+            if usr_input == "quit":
                 break
+            else:
+                if usr_input != '':
+                    # Parses the user input to see if it is a valid input
+                    match = re.match(r"(\d)\|((\S| )*)", usr_input)
+                    if match:
+                        # Parse the user input into op_code and content
+                        op_code, content = int(match.group(1)), match.group(2)
+                        output = pack_packet(op_code, content)
+                        server.send(output)
+                    else:
+                        print(ERROR_MSG)
+
         server.close()
+        server_listening.join()
     # grpc implementation of the client
     elif sys.argv[1] == 'grpc':
         chat = ChatClient(ip_address, port)
