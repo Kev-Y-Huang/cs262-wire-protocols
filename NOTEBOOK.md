@@ -8,10 +8,10 @@ We decided design our wire protocol to use user operation codes to handle user i
 
 ```
 Format: <command>|<text>
-0|                  -> list user accounts
+0|<regex>           -> list user accounts
 1|<username>        -> create an account with name username
 2|<username>        -> login to an account with name username
-3|<username>        -> logout from current account
+3|                  -> logout from current account
 4|                  -> delete current account
 5|<username>|<text> -> send message to username
 6|                  -> deliver all unsent messages to current user
