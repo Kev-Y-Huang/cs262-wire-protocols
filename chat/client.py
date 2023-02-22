@@ -8,6 +8,7 @@ from utils import get_server_config_from_file
 from wire.client import ReceiveMessages
 from wire.wire_protocol import pack_packet
 
+# global variables
 YAML_CONFIG_PATH = '../config.yaml'
 ERROR_MSG = """Invalid input string, please use format <command>|<text>
     0|                  -> list user accounts
@@ -20,12 +21,14 @@ ERROR_MSG = """Invalid input string, please use format <command>|<text>
 
 
 def main():
+    # Check if enough arguments are passed
     if len(sys.argv) != 2:
         print('Correct usage: python client.py [implementation]')
         exit()
 
     ip_address, port = get_server_config_from_file(YAML_CONFIG_PATH)
 
+    # Wire protocol implementation of the client
     if sys.argv[1] == 'wire':
         # Setup connection to server socket
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -35,7 +38,7 @@ def main():
         t1.start()
         while True:
             try:
-                usr_input = input()
+                usr_input = input('<you> ')
                 if usr_input == "quit":
                     sys.exit()
                 else:
@@ -51,11 +54,12 @@ def main():
             except KeyboardInterrupt:
                 break
         server.close()
+    # grpc implementation of the client
     elif sys.argv[1] == 'grpc':
         chat = ChatClient(ip_address, port)
 
         while True:
-            usr_input = input()
+            usr_input = input('<you> ')
             if usr_input == "quit":
                 sys.exit()
             else:

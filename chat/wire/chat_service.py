@@ -8,7 +8,7 @@ Response = NewType('response', tuple[int, str])
 
 class User:
     """
-    A class used to handle chat functions
+    A class used to handling user state information.
     ...
 
     Attributes
@@ -58,6 +58,9 @@ class Chat:
     online_users : dict
         dictionary of online users
 
+    lock: Lock()
+        Primative lock for multithread synchronization
+
     Methods
     -------
     says(sound=None)
@@ -73,14 +76,20 @@ class Chat:
         self.online_users = {}
         self.lock = threading.Lock()
 
-    def handler(self, op_code: int, user: User, content: str = "") -> list[Response]:
+    def handler(self, user: User, op_code: int, content: str = "") -> list[Response]:
         """
         Handler function
 
         Parameters
         ----------
-        exp: str, optional
-            Regex expression to filter accounts
+        user: User
+            User state object
+
+        op_code: int
+            Code specifying user requested operation
+
+        content: str, optional
+            Contents of the request
         """
 
         if op_code == 0:
@@ -103,6 +112,8 @@ class Chat:
                     return [(user.get_conn(), f"<server> Invalid input: {content}")]
             elif op_code == 6:
                 return self.deliver_undelivered(user)
+            else:
+                return [(user.get_conn(), f'<server> {op_code} is not a valid operation code.')]
         else:
             return [(user.get_conn(), "<server> Operation not permitted. You are not logged in.")]
 
@@ -112,6 +123,9 @@ class Chat:
 
         Parameters
         ----------
+        user: User
+            User information
+        
         exp: str
             Regex expression to filter accounts
         """
@@ -127,6 +141,7 @@ class Chat:
         accounts_to_list = []
 
         self.lock.acquire()
+        # Filters all usernames based on regex pattern
         for account in self.accounts:
             if filter.match(account):
                 accounts_to_list.append(account)
@@ -140,9 +155,9 @@ class Chat:
 
         Parameters
         ----------
-        accounts : dict
-            The sound the animal makes (default is None)
-
+        user: User
+            User information
+        
         username: str
             Username for the new account
         """
@@ -156,17 +171,19 @@ class Chat:
         if "" == username:
             return [(conn, "<server> Username cannot be empty")]
 
-        # if the username already exists, reject the request
         self.lock.acquire()
+        # if the username already exists, reject the request
         if username in self.accounts:
             response = (
                 conn, f"<server> Account \"{username}\" failed to create. Please select another username")
         else:
+            # Updates chat app state for the new account
             self.accounts[username] = []
             self.online_users[username] = conn
             user.set_name(username)
             response = (conn, f"<server> Account \"{username}\" created")
         self.lock.release()
+
         return [response]
 
     def login_account(self, user: User, username: str) -> list[Response]:
@@ -175,9 +192,11 @@ class Chat:
 
         Parameters
         ----------
-
+        user: User
+            User information
+        
         username: str
-            Account username 
+            Account username
         """
 
         conn = user.get_conn()
@@ -192,6 +211,7 @@ class Chat:
             if user.get_name() in self.online_users:
                 del self.online_users[user.get_name()]
 
+            # Updates chat app state with new account connection
             self.online_users[username] = conn
             user.set_name(username)
             response = (conn, f"<server> Logged into \"{username}\"")
@@ -205,9 +225,11 @@ class Chat:
 
         Parameters
         ----------
-
+        user: User
+            User information
+        
         username: str
-            Account username 
+            Account username
         """
 
         conn = user.get_conn()
@@ -229,7 +251,8 @@ class Chat:
 
         Parameters
         ----------
-        None
+        user: User
+            User information
         """
 
         conn = user.get_conn()
@@ -252,9 +275,14 @@ class Chat:
 
         Parameters
         ----------
+        user: User
+            User information of sender
 
-        username: str
-            Account username 
+        send_user: str
+            Username of the intended recipient
+
+        message: str
+            Chat message
         """
 
         conn = user.get_conn()
@@ -282,13 +310,12 @@ class Chat:
 
     def deliver_undelivered(self, user: User) -> list[Response]:
         """
-        Logs in to an account given a specified username
+        Delivers all queued messages to a user upon request
 
         Parameters
         ----------
-
-        accounts: dict
-            Account username 
+        user: User
+            User information 
         """
 
         conn = user.get_conn()

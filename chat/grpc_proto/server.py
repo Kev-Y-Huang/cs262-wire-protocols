@@ -6,28 +6,64 @@ import grpc_proto.chat_pb2 as chat_pb2
 import grpc_proto.chat_pb2_grpc as chat_pb2_grpc
 
 
-class ChatServer(chat_pb2_grpc.ChatServer):  # inheriting here from the protobuf rpc file which is generated
+class ChatServer(chat_pb2_grpc.ChatServer):
+    """
+    grpc ChatServer implementation
+    ...
+
+    Attributes
+    ----------
+    users : dict
+        dictionary of all accounts
+
+    online_users : set
+        set of online users
+
+    is_connected: bool
+        Boolean representing whether the server is up and connected
+
+    Methods
+    -------
+    says(sound=None)
+        Prints the animals name and what sound it makes
+    """
 
     def __init__(self):
         self.users = {}
         self.online_users = set()
         self.is_connected = True
 
+    def server_message(self, recip_username, message):
+        chat_message = {"username": "server", "message": message}
+        self.users[recip_username]["messages"].append(chat_message)
+        
     def CreateAccount(self, request, context):
+        if " " in request.username or "|" in request.username:
+            context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
+            context.set_details('Username cannot have " " or "|"')
+            return chat_pb2.ListofUsernames()
+
+        if "" == request.username:
+            context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
+            context.set_details('Username cannot be empty')
+            return chat_pb2.ListofUsernames()
+
         if request.username in self.users:
             context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
-            context.set_details(f'"{request.wildcard}" is not a valid regex pattern.')
+            context.set_details(
+                f'"{request.wildcard}" is already in use. Please select another username.')
             return chat_pb2.ListofUsernames()
+
         self.users[request.username] = {"messages": [], "queue": []}
         self.online_users.add(request.username)
-        logging.info(f'User {request.username} has been created')
+        logging.info(f'User "{request.username}" has been created')
         return chat_pb2.User(username=request.username)
 
     def DeleteAccount(self, request, context):
-        # Checks if the passed-in expression is a valid regex pattern
-        if self.users[request.username] != request.user_id: # TODO deal with non existence of user_id
-            context.set_code(grpc.StatusCode.ALREADY_EXISTS)
-            context.set_details(f'Account {request.username} failed to create. Please select another username.')
+        if request.username not in self.users:
+            context.set_code(grpc.StatusCode.NOT_FOUND)
+            context.set_details(
+                f'No account found with username "{request.username}".')
             return chat_pb2.User()
         del self.users[request.username]
         self.online_users.remove(request.username)
@@ -94,7 +130,14 @@ class ChatServer(chat_pb2_grpc.ChatServer):  # inheriting here from the protobuf
     def Login(self, request, context):
         if request.username not in self.users:
             context.set_code(grpc.StatusCode.NOT_FOUND)
-            context.set_details(f'No account with user id {request.user_id} and username {request.username} found')
+            context.set_details(
+                f'No account with and username "{request.username}" found.')
+            return chat_pb2.User()
+        
+        if request.username in self.online_users:
+            context.set_code(grpc.StatusCode.PERMISSION_DENIED)
+            context.set_details(
+                f'You cannot login "{request.username}" currently.')
             return chat_pb2.User()
         
         self.online_users.add(request.username)

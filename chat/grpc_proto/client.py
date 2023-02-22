@@ -1,6 +1,7 @@
 import grpc
 import grpc_proto.chat_pb2 as chat_pb2
 import grpc_proto.chat_pb2_grpc as chat_pb2_grpc
+from utils import print_with_prompt
 
 import threading
 
@@ -29,30 +30,34 @@ class ChatClient:
             Regex expression to filter accounts
         """
 
-        if op_code == 0:
-            self.list_accounts(content)
-        elif op_code == 1:
-            self.create_account(content)
-        elif op_code == 2:
-            self.login_account(content)
-        elif self.is_connected:
-            if op_code == 3:
-                self.logout_account()
-            elif op_code == 4:
-                self.delete_account()
-            elif op_code == 5:
-                match = re.match(r"(\S+)\|((\S| )+)", content)
-                if match:
-                    send_user, message = match.group(1), match.group(2)
-                    self.send_message(send_user, message)
+        try:
+            if op_code == 0:
+                self.list_accounts(content)
+            elif op_code == 1:
+                self.create_account(content)
+            elif op_code == 2:
+                self.login_account(content)
+            elif self.is_connected:
+                if op_code == 3:
+                    self.logout_account()
+                elif op_code == 4:
+                    self.delete_account()
+                elif op_code == 5:
+                    match = re.match(r"(\S+)\|((\S| )+)", content)
+                    if match:
+                        send_user, message = match.group(1), match.group(2)
+                        self.send_message(send_user, message)
+                    else:
+                        print(f"<server> Invalid input: {content}")
+                elif op_code == 6:
+                    self.deliver_undelivered()
                 else:
-                    print(f"<server> Invalid input: {content}")
-            elif op_code == 6:
-                self.deliver_undelivered()
+                    print(f'<server> {op_code} is not a valid operation code.')
             else:
-                print(f'<server> {op_code} is not a valid operation code.')
-        else:
-            print("<server> Operation not permitted. You are not logged in.")
+                print("<server> Operation not permitted. You are not logged in.")
+        except grpc.RpcError as rpc_error:
+            print(
+                f"<server> Exception: code={rpc_error.code()} message={rpc_error.details()}")
 
     @property
     def is_connected(self):
@@ -76,7 +81,7 @@ class ChatClient:
         threading.Thread(target=self.check_messages, daemon=True).start()
 
         print(
-            f"<server> Account created with username {username}")
+            f'<server> Account created with username "{username}".')
 
         return response
 
@@ -85,11 +90,12 @@ class ChatClient:
         Returns:
             boolean: True to indicate the disconnection was successful.
         """
-        if not self.username:
-            return True
-
         self.__stub.DeleteAccount(self.__user)
+
+        print(f'<server> Account "{self.username}" deleted.')
+
         self.__user = None
+
         return True
 
     def login_account(self, username: str):
@@ -98,6 +104,9 @@ class ChatClient:
             boolean: True to indicate the disconnection was successful.
         """
         response = self.__stub.Login(chat_pb2.User(username=username))
+
+        print(f'<server> Account "{self.username}" logged in.')
+
         self.__user = response
         self.__is_connected = True
 
@@ -108,10 +117,10 @@ class ChatClient:
         Returns:
             boolean: True to indicate the disconnection was successful.
         """
-        if not self.username:
-            return True
-
         self.__stub.Logout(self.__user)
+
+        print(f'<server> Account "{self.username}" logged out.')
+
         self.__user = None
         self.__is_connected = False
         return True
@@ -121,9 +130,8 @@ class ChatClient:
         Returns:
             boolean: True to indicate the disconnection was successful.
         """
-        if len(wildcard) == 0:
-            wildcard = "\S*"
-        response = self.__stub.ListAccounts(chat_pb2.Wildcard(wildcard=wildcard))
+        response = self.__stub.ListAccounts(
+            chat_pb2.Wildcard(wildcard=wildcard))
 
         print(f"<server> All Accounts: {str(response.usernames)}")
 
@@ -142,7 +150,7 @@ class ChatClient:
         when waiting for new messages
         """
         for chat_message in self.__stub.ChatStream(chat_pb2.User(username=self.__user.username)):  # this line will wait for new messages from the server!
-            print("<{}> {}".format(chat_message.username,
+            print_with_prompt("<{}> {}".format(chat_message.username,
                   chat_message.message))  # debugging statement
 
     def deliver_undelivered(self):
