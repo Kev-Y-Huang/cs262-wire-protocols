@@ -20,8 +20,9 @@ logging.basicConfig(format='[%(asctime)-15s]: %(message)s', level=logging.INFO)
 def main():
     # Check if enough arguments are passed
     if len(sys.argv) != 2:
-        print('Correct usage: python client.py [implementation]')
-        exit()
+        print('Error: Incorrect Usage\n\
+              Correct usage: server.py [implementation]')
+        sys.exit()
 
     # Wire protocol implementation of the client
     if sys.argv[1] == 'wire':
@@ -31,28 +32,25 @@ def main():
         server.bind((IP_ADDRESS, PORT))
         server.listen(5)
 
+        # Create a Chat object to handle all the chat logic
         logging.info('Starting Wire Protocol Server')
-
         chat_app = Chat()
 
         while True:
             try:
-                """Accepts a connection request and stores two parameters,
-                conn which is a socket object for that user, and addr
-                which contains the IP address of the client that just
-                connected"""
+                # Listen for and establish connection with incoming clients
                 conn, addr = server.accept()
 
                 # prints the address of the user that just connected
-                print(addr[0] + " connected")
+                logging.info(addr[0] + " connected.")
 
-                # creates and individual thread for every user
-                # that connects
+                # creates a new thread for incoming client
                 start_new_thread(client_thread, (chat_app, conn, addr))
             except KeyboardInterrupt:
-                logging.info('Stopping Server')
+                logging.info('Stopping Server.')
                 break
 
+        # Close the server socket
         conn.close()
         server.close()
     # grpc implementation of the client
@@ -69,12 +67,17 @@ def main():
         server.start()
 
         try:
+            # Block thread until the server stops
             server.wait_for_termination()
         except KeyboardInterrupt:
             logging.info('Stopping Server')
+            # Set the service to not connected so that each thread is ended
             service.is_connected = False
     else:
-        print('')
+        print('Error: Incorrect Usage\n\
+              Correct usage: Implementation must be either "wire" or "grpc"')
+    
+    sys.exit()
 
 if __name__ == "__main__":
     main()
