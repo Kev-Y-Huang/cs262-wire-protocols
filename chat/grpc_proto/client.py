@@ -31,38 +31,55 @@ class ChatClient:
         """
 
         try:
+            # op code to list accounts
             if op_code == 0:
                 self.list_accounts(content)
+            # op code to create account
             elif op_code == 1:
                 self.create_account(content)
+            # op code to login
             elif op_code == 2:
                 self.login_account(content)
+            # op codes that should only work if authenticated
             elif self.is_connected:
+                # op code to logout
                 if op_code == 3:
                     self.logout_account()
+                # op code to delete account
                 elif op_code == 4:
                     self.delete_account()
+                # op code to send message
                 elif op_code == 5:
+                    # check if the message is in the correct format
+                    # cannot have a pipe character in the message
                     match = re.match(r"(\S+)\|((\S| )+)", content)
                     if match:
                         send_user, message = match.group(1), match.group(2)
                         self.send_message(send_user, message)
+                    # if the message is not in the correct format
+                    # print an error message
                     else:
                         print(f"<server> Invalid input: {content}")
+                # op code to deliver undelivered messages
                 elif op_code == 6:
                     self.deliver_undelivered()
+                # op code is not valid
                 else:
                     print(f'<server> {op_code} is not a valid operation code.')
+            # if the user is not logged in print an error message
             else:
                 print("<server> Operation not permitted. You are not logged in.")
+        # catch any exceptions that are thrown by the server
         except grpc.RpcError as rpc_error:
             print(
                 f"<server> Exception: code={rpc_error.code()} message={rpc_error.details()}")
 
+    # property to check if the user is connected
     @property
     def is_connected(self):
         return self.__is_connected
 
+    # property to get the username
     @property
     def username(self):
         if not self.__is_connected:
@@ -70,7 +87,8 @@ class ChatClient:
         return self.__user.username
 
     def create_account(self, username: str):
-        """Connect to the chat server
+        """
+        Connect to the chat server
         Args:
             username: The username to register against the chat server
         """
@@ -86,9 +104,10 @@ class ChatClient:
         return f'<server> Account created with username "{username}".'
 
     def delete_account(self):
-        """Disconnect from the chat server
+        """
+        Disconnect from the chat server
         Returns:
-            boolean: True to indicate the disconnection was successful.
+            str: string to indicate the disconnection was successful.
         """
         self.__stub.DeleteAccount(self.__user)
 
@@ -100,9 +119,10 @@ class ChatClient:
         return f'<server> Account "{self.username}" deleted.'
 
     def login_account(self, username: str):
-        """Disconnect from the chat server
+        """
+        Disconnect from the chat server
         Returns:
-            boolean: True to indicate the disconnection was successful.
+            str: string to indicate the disconnection was successful.
         """
         response = self.__stub.Login(chat_pb2.User(username=username))
 
@@ -115,9 +135,10 @@ class ChatClient:
         return f'<server> Account "{self.username}" logged in.'
 
     def logout_account(self):
-        """Disconnect from the chat server
+        """
+        Logout from the chat server
         Returns:
-            boolean: True to indicate the disconnection was successful.
+            str: string to indicate the logout was successful.
         """
         self.__stub.Logout(self.__user)
         print(f'<server> Account "{self.username}" logged out.')
@@ -130,9 +151,10 @@ class ChatClient:
         return f'<server> Account "{username}" logged out.'
 
     def list_accounts(self, wildcard: str):
-        """Disconnect from the chat server
+        """
+        List all accounts on the chat server
         Returns:
-            boolean: True to indicate the disconnection was successful.
+            str: string to indicate listing accounts was successful.
         """
         response = self.__stub.ListAccounts(
             chat_pb2.Wildcard(wildcard=wildcard))
@@ -143,9 +165,12 @@ class ChatClient:
         return f"<server> All Accounts: {str(response.usernames)}"
 
     def send_message(self, send_user: str, message: str):
-        """Send a message to the chat server
+        """
+        Send a message to the chat server
         Raises:
             NotConnectedError: Raised when a connection has not been made to the chat server.
+        Returns:
+            str: string to indicate the message was sent successfully.
         """
         self.__stub.SendMessage(chat_pb2.ChatMessage(username=self.username, recip_username=send_user, message=message))
         

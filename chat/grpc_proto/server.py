@@ -29,37 +29,59 @@ class ChatServer(chat_pb2_grpc.ChatServer):
     """
 
     def __init__(self):
+        # dictionary of all accounts and their messages
         self.users = {}
+        # set of online users
         self.online_users = set()
+        # boolean representing whether the server is up and connected
         self.is_connected = True
 
+    # helper function to send a message to a user
     def server_message(self, recip_username, message):
         chat_message = {"username": "server", "message": message}
         self.users[recip_username]["messages"].append(chat_message)
-        
+    
     def CreateAccount(self, request, context):
+        '''
+        Creates an account with the given username
+        Returns:
+            User: User object
+        '''
+
+        # Checks if the username is valid
         if " " in request.username or "|" in request.username:
             context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
             context.set_details('Username cannot have " " or "|"')
             return chat_pb2.ListofUsernames()
 
+        # Checks if the username is empty
         if "" == request.username:
             context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
             context.set_details('Username cannot be empty')
             return chat_pb2.ListofUsernames()
 
+        # Checks if the username is already in use
         if request.username in self.users:
             context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
             context.set_details(
                 f'"{request.wildcard}" is already in use. Please select another username.')
             return chat_pb2.ListofUsernames()
 
+
+        # Creates the account
         self.users[request.username] = {"messages": [], "queue": []}
         self.online_users.add(request.username)
         logging.info(f'User "{request.username}" has been created')
         return chat_pb2.User(username=request.username)
 
+
     def DeleteAccount(self, request, context):
+        '''
+        Deletes an account with the given username
+        Returns:
+            User: User object     
+        '''
+
         if request.username not in self.users:
             context.set_code(grpc.StatusCode.NOT_FOUND)
             context.set_details(
@@ -71,6 +93,11 @@ class ChatServer(chat_pb2_grpc.ChatServer):
         return chat_pb2.User(username=request.username)
 
     def ListAccounts(self, request, context):
+        '''
+        Lists an accounts with the given regex pattern
+        Returns:
+            ListofUsernames: ListofUsernames object  
+        '''
         # Checks if the passed-in expression is a valid regex pattern
         try:
             filter = re.compile(request.wildcard)
@@ -88,6 +115,11 @@ class ChatServer(chat_pb2_grpc.ChatServer):
         return list_of_usernames
 
     def SendMessage(self, request, context):
+        '''
+        Sends a message to a user
+        Returns:
+            Empty: Empty object
+        '''
         # if the username does not exist, we cannot send the message
         if request.username not in self.users:
             context.set_code(grpc.StatusCode.NOT_FOUND)
@@ -121,6 +153,11 @@ class ChatServer(chat_pb2_grpc.ChatServer):
                 yield self.users[request.username]["messages"].pop(0)
 
     def DeliverMessages(self, request, context):
+        """
+        Delivers all queued messages to the user
+        Returns:
+            Empty: Empty object
+        """
         queue = self.users[request.username]["queue"]
         self.users[request.username]["messages"].extend(queue)
         self.users[request.username]["queue"] = []
@@ -128,6 +165,11 @@ class ChatServer(chat_pb2_grpc.ChatServer):
         return chat_pb2.Empty()
 
     def Login(self, request, context):
+        """
+        Logs a user into the server
+        Returns:
+            User: User object
+        """
         if request.username not in self.users:
             context.set_code(grpc.StatusCode.NOT_FOUND)
             context.set_details(
@@ -145,6 +187,11 @@ class ChatServer(chat_pb2_grpc.ChatServer):
         return chat_pb2.User(username=request.username)
 
     def Logout(self, request, context):
+        """
+        Logs a user out of the server
+        Returns:
+            User: User object
+        """
         self.online_users.remove(request.username)
         logging.info(f'User has logged out of "{request.username}"')
         return chat_pb2.User(username=request.username)

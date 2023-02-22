@@ -1,6 +1,60 @@
 # Engineering Notebook
 
+## Key Decisions and Justifications
+
+### Operation codes and user input
+
+We decided to user operation codes to handle user input. We decided to use operation codes because it was a straight forward way to handle user input that was clear to the user. We used the pipe character "|" to separate the operation code from the rest of the user input. An error message would be broadcast to any user that did not input the correct format that specified the correct format to the user, as seen below.
+
+```
+Format: <command>|<text>
+0|                  -> list user accounts
+1|<username>        -> create an account with name username
+2|<username>        -> login to an account with name username
+3|<username>        -> logout from current account
+4|                  -> delete current account
+5|<username>|<text> -> send message to username
+6|                  -> deliver all unsent messages to current user
+```
+
+### GRPC vs Wire Protocol
+
+For GRPC, most of the handling was done was split between client side and server side. This decision was made because GRPC automatically generated the functions for the Chat service, so it made sense to just call those functions on the server directly and let GRPC handle the rest. However, with our wire protocol, we had to implement the functions ourselves, so we decided to have the client send the op code and the server would handle the rest. As a result, for our wire protocol implementation, the handling was almost completely done on the server side, with the client only sending the op code and the server handling the rest. The client would send the op code and the server would handle the rest, and then send back a response to the client.
+
+We decided to rewrite the functions inside the GRPC implementation for this reason. However, we tried to share as much common code as possible, while also handling the specifics of GRPC. Future implementations would likely abstract all functions to be shared across both implementations.
+
+### Wire Protocol Threading
+
+For our wire protocol implementation, we decided to use threading in the server to handle multiple clients at once. We decided to use threading because it was the easiest way to handle multiple clients at once. We used locks to ensure that all threads inside of the server could alter the data when one thread was trying to access it. In addition, we decided to use a thread to listen on the client side for any messages transmitted from the server side so we could continuously listen for messages from the server.
+
+### Testing and handling edge cases
+
+In order to create a robust chat app, we wanted to make sure that all of our code worked as intended. To do this, we wrote tests for all functions within the GRPC and wire protocol chat implementations, as well as the wire protocol we implemented itself. Our tests were able to handle multiple edge cases we thought of, detailed below. We also manually tested to make sure that the server could handle multiple clients at once, and that the server could handle multiple messages being sent at once.
+
+Edge cases and intended behavior:
+* User tries to create an account with a pipe character inside
+    * does not allow user to create account
+* User tries to create an account with a username that already exists
+    * does not allow user to create account
+* User tries to create an account with an empty username
+    * does not allow user to create account
+* User tries to send a message to a user that does not exist
+    * does not allow user to send message
+* User tries to send a message to themselves
+    * allows user to send message to themselves
+* User tries to send a message to a user that is not logged in
+    * message is queued to be sent to user when they log in
+* User tries to send a message to a user that is logged in and has a queued message
+    * message is sent to user immediately, queued messages stayed queued
+* User tries to log in to a user that is already logged in
+    * does not allow user to log in
+* User deletes an account that has queued messages
+    * deletes account and all queued messages
+    
+
+
 ## Working Log
+
 ### Feb 20th
 
 Tasks done
