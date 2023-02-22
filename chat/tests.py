@@ -44,12 +44,12 @@ assert chat_app.online_users == {}
 assert chat_app.accounts == {}
 
 # Adding an account to the chat app
-assert chat_app.create_account(user1, "user1") == [(None, '<server> Account "user1" created')]
+assert chat_app.create_account(user1, "user1") == [(None, '<server> Account created with username "user1".')]
 assert chat_app.online_users == {"user1": None}
 assert chat_app.accounts == {"user1": []}
 
 user2 = User(None)
-assert chat_app.create_account(user2, "user2") == [(None, '<server> Account "user2" created')]
+assert chat_app.create_account(user2, "user2") == [(None, '<server> Account created with username "user2".')]
 assert chat_app.online_users == {"user1": None, "user2": None}
 assert chat_app.accounts == {"user1": [], "user2": []}
 
@@ -57,9 +57,9 @@ assert chat_app.accounts == {"user1": [], "user2": []}
 assert chat_app.list_accounts(user1) == [(None, '<server> List of accounts: [\'user1\', \'user2\']')]
 
 # Adding an invalid account name to the chat app
-assert chat_app.create_account(user1, "y|eet") == [(None, "<server> Username cannot have \" \" or \"|\"")]
-assert chat_app.create_account(user1, "y eet") == [(None, "<server> Username cannot have \" \" or \"|\"")]
-assert chat_app.create_account(user1, "") == [(None, "<server> Username cannot be empty")]
+assert chat_app.create_account(user1, "y|eet") == [(None, "<server> Failed to create account. Username cannot have \" \" or \"|\".")]
+assert chat_app.create_account(user1, "y eet") == [(None, "<server> Failed to create account. Username cannot have \" \" or \"|\".")]
+assert chat_app.create_account(user1, "") == [(None, "<server> Failed to create account. Username cannot be empty.")]
 assert chat_app.online_users == {"user1": None, "user2": None}
 assert chat_app.accounts == {"user1": [], "user2": []}
 
