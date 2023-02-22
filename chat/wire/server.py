@@ -18,7 +18,7 @@ def client_thread(chat_app, conn, addr):
 
     while True:
         try:
-            data = conn.recv(2048)
+            data = conn.recv(1024)
 
             if data:
                 op_code, contents = unpack_packet(data)

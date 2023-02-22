@@ -2,9 +2,9 @@
 
 ## Key Decisions and Justifications
 
-### Operation codes and user input
+### Wire protocol design
 
-We decided to user operation codes to handle user input. We decided to use operation codes because it was a straight forward way to handle user input that was clear to the user. We used the pipe character "|" to separate the operation code from the rest of the user input. An error message would be broadcast to any user that did not input the correct format that specified the correct format to the user, as seen below.
+We decided design our wire protocol to use user operation codes to handle user input. We decided to use operation codes because it was a straight forward way to handle user input that was clear to the user. We used the pipe character "|" to separate the operation code from the rest of the user input. An error message would be broadcast to any user that did not input the correct format that specified the correct format to the user, as seen below.
 
 ```
 Format: <command>|<text>
@@ -17,19 +17,19 @@ Format: <command>|<text>
 6|                  -> deliver all unsent messages to current user
 ```
 
-### GRPC vs Wire Protocol
+The general form of our wire protocol is a 4-byte unsigned integer operation code, followed by a pipe character, followed by the relevant information in each particular request. We encode the whole packet using `utf-8` before sending across a socket. We chose to use `utf-8` because it is the most common encoding used for text, and it is the default encoding for Python. We chose to use a 4-byte unsigned integer for the operation code because it gave us the flexibility to add more potential operations in the future. 
 
-For GRPC, most of the handling was done was split between client side and server side. This decision was made because GRPC automatically generated the functions for the Chat service, so it made sense to just call those functions on the server directly and let GRPC handle the rest. However, with our wire protocol, we had to implement the functions ourselves, so we decided to have the client send the op code and the server would handle the rest. As a result, for our wire protocol implementation, the handling was almost completely done on the server side, with the client only sending the op code and the server handling the rest. The client would send the op code and the server would handle the rest, and then send back a response to the client.
+### Wire Protocol Design
 
-We decided to rewrite the functions inside the GRPC implementation for this reason. However, we tried to share as much common code as possible, while also handling the specifics of GRPC. Future implementations would likely abstract all functions to be shared across both implementations.
+For our wire protocol implementation, we decided to use threading in the server to handle multiple clients at once. We used locks to ensure that all threads inside of the server could alter the data when one thread was trying to access it. 
 
-### Wire Protocol Threading
+Our wire protocol server stores all accounts in a dictionary, with each username mapped to the queued messages. We also keep a dictionary of online users, with each username mapped to the socket that the user is connected to. This allowed us to easily check if a user was online or not, and to send messages to the correct socket. 
 
-For our wire protocol implementation, we decided to use threading in the server to handle multiple clients at once. We decided to use threading because it was the easiest way to handle multiple clients at once. We used locks to ensure that all threads inside of the server could alter the data when one thread was trying to access it. In addition, we decided to use a thread to listen on the client side for any messages transmitted from the server side so we could continuously listen for messages from the server.
+Our wire protocol client runs a continuous loop that takes in user input and sends it to the server. It also runs a separate thread that listens for any messages from the server. This allows the client to continuously listen for messages from the server, and to send messages to the server.
 
 ### Testing and handling edge cases
 
-In order to create a robust chat app, we wanted to make sure that all of our code worked as intended. To do this, we wrote tests for all functions within the GRPC and wire protocol chat implementations, as well as the wire protocol we implemented itself. Our tests were able to handle multiple edge cases we thought of, detailed below. We also manually tested to make sure that the server could handle multiple clients at once, and that the server could handle multiple messages being sent at once.
+In order to create a robust chat app, we wanted to make sure that all of our code worked as intended. To do this, we wrote tests for all functions within the GRPC and wire protocol chat implementations, as well as the wire protocol we implemented itself. Our tests were able to handle multiple edge cases we thought of, detailed below. In addition to the tests we wrote, we also manually tested to make sure that each of the edge cases below were performing as expected, and also other scenarios like connecting multiple clients to the server, and that the server could handle multiple messages being sent at once.
 
 Edge cases and expected behavior:
 * User tries to create an account with a pipe character inside
@@ -51,9 +51,40 @@ Edge cases and expected behavior:
 * User deletes an account that has queued messages
     * deletes account and all queued messages
     
+## Comparing GRPC and Wire Protocol
 
+### Code Complexity
 
+For our GRPC implementation, the code was very similar to the wire protocol implementation. However, most oof the handling was done was split between client side and server side. This decision was made because GRPC automatically generated the functions for the Chat service, so it made sense to just call those functions on the server directly and let GRPC handle the rest. We decided to rewrite the functions inside the GRPC implementation for this reason. However, we tried to share as much common code as possible, while also handling the specifics of GRPC. Future implementations would likely abstract all functions to be shared across both implementations. With our wire protocol, we had to implement the functions ourselves, so we decided to have the client send the op code and the server would handle the rest. The client would send the op code and the server would handle the rest, and then send back a response to the client. Outside of the functions, the code was very similar.
+
+We saw that by using GRPC, our code quality was better, as it allowed us to create specific types and functions for the Chat service. This allowed us to have a more robust implementation of the chat service with more structured calls, data structures, and error messages compared to the wire protocol implementation. However, we saw that the wire protocol implementation easier to test, as we could test the wire protocol and functions directly itself.
+
+### Performance
+
+For our GRPC implementation, the client was able to continuously stream from the server and receive all messages. When implementing our wire protocol, we saw issues with multiple packets being sent to the client through our wire protocol implementation, specifically when a user decided to deliver all messages that had been queued to send to them when they were offline. Packets were beign skipped when received, even though they were all being sent. We determined this was becauset the packets were being sent to quickly, so to solve this, we decided to add a short timeout between packets being sent.
+
+Sending individual messages across our wire protocol took aroudn 1e-05 seconds, whereas sending a message across GRPC took around 1e-2 seconds. This is likely due to the fact that GRPC is a higher level protocol that handles a lot of the work for us, whereas the wire protocol is a lower level protocol that we have to implement ourselves. We saw that GRPC was more performant than the wire protocol, but we also saw that the wire protocol was easier to implement and test. It is of note that with the timeout we added to our wire protocol implementation, if a user were to send multiple messages with less than 0.1 seconds of each other, he wire protocol woudl be able to send all messages to the client, but it would likely take longer than GRPC.
+
+### Buffer Size
+
+The buffer size were similar. For example, for a message "test" sent across gRPC from user "1" to user "2", gRPC would send a message of size 57 bytes, while the wire protocol would send a message of size 13 bytes. Other combinations of users and messages performed similarly. This is likely due to the fact that gRPC doesn't necessarily have the potential inefficiencies like our wire protocol does. One potential inefficiency in our wire protocol implementation was our use of 4 bytes for opcodes that were only 1 byte long (0, 1, 2, ...). GRPC likely handles this inefficiency for us, and thus we see smaller buffer sizes for it.
+ 
 ## Working Log
+
+
+### Feb 21st
+
+Tasks done
+
+* Bug fixed for GRPC not sending all messages to client
+    * adding in lock for when a user is sending messages to another user
+* Bug fixed for user trying to log in to an account that is already logged in
+
+
+TODOs
+
+Problems/Questions:
+
 
 ### Feb 20th
 
@@ -62,6 +93,7 @@ Tasks done
 * Added in working GRPC
     * Decided to create new functions even though the code was very similar in order to handle specifics within GRPC
 * Added in authentication checks for when a user tries specific op codes.
+* Added in timeout for wire protocol
 
 TODOs
 
