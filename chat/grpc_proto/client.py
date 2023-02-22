@@ -102,7 +102,7 @@ class ChatClient:
 
     def create_account(self, username: str):
         """
-        Connect to the chat server
+        Sends a CreateAccount request to the server
         Args:
             username: The username to register against the chat server
         """
@@ -111,12 +111,12 @@ class ChatClient:
         self.__user = response
         self.__is_connected = True
 
-        # Now that we are connected, start listening for messages on the chat stream
-        self.__listening_stream = self.__stub.ChatStream(chat_pb2.User(username=self.__user.username))
+        # Start listening for messages on the chat stream for the new user
+        self.__listening_stream = self.__stub.ChatStream(
+            chat_pb2.User(username=self.__user.username))
         threading.Thread(target=self.check_messages, daemon=True).start()
 
-        print(
-            f'<server> Account created with username "{username}".')
+        print(f'<server> Account created with username "{username}".')
 
         return f'<server> Account created with username "{username}".'
 

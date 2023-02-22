@@ -70,31 +70,32 @@ class ChatServer(chat_pb2_grpc.ChatServer):
         Returns:
             User: User object
         '''
+        username = request.username
 
-        # Checks if the username is valid
-        if " " in request.username or "|" in request.username:
+        # Checks if the passed-in username is valid
+        if " " in username or "|" in username:
             context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
-            context.set_details('Username cannot have " " or "|"')
+            context.set_details('Username cannot have " " or "|".')
             return chat_pb2.ListofUsernames()
 
         # Checks if the username is empty
-        if "" == request.username:
+        if "" == username:
             context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
             context.set_details('Username cannot be empty')
             return chat_pb2.ListofUsernames()
 
         # Checks if the username is already in use
-        if request.username in self.users:
-            context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
+        if username in self.users:
+            context.set_code(grpc.StatusCode.ALREADY_EXISTS)
             context.set_details(
-                f'"{request.wildcard}" is already in use. Please select another username.')
+                f'Username "{username}" is already in use.')
             return chat_pb2.ListofUsernames()
 
-        # Creates the account
-        self.users[request.username] = {"messages": [], "queue": []}
-        self.online_users.add(request.username)
-        logging.info(f'User "{request.username}" has been created')
-        return chat_pb2.User(username=request.username)
+        # Updates chat server state for the new account
+        self.users[username] = {"messages": [], "queue": []}
+        self.online_users.add(username)
+        logging.info(f'User "{username}" has been created')
+        return chat_pb2.User(username=username)
 
     def Login(self, request, context):
         """

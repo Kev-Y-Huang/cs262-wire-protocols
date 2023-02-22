@@ -157,28 +157,29 @@ class Chat:
         username: str
             Username for the new account
         """
-
         conn = user.get_conn()
 
         # Checks if the passed-in username is valid
         if " " in username or "|" in username:
-            return [(conn, "<server> Username cannot have \" \" or \"|\"")]
+            return [(conn, '<server> Failed to create account. Username cannot have " " or "|".')]
         
+        # Checks if the username is empty
         if "" == username:
-            return [(conn, "<server> Username cannot be empty")]
+            return [(conn, '<server> Failed to create account. Username cannot be empty.')]
 
-        self.lock.acquire()
-        # if the username already exists, reject the request
+        # Checks if the username is already in use
         if username in self.accounts:
             response = (
-                conn, f"<server> Account \"{username}\" failed to create. Username already exists, please select another username")
+                conn, f'<server> Failed to create account. Username "{username}" is already in use.')
         else:
             # Updates chat app state for the new account
+            self.lock.acquire()
             self.accounts[username] = []
             self.online_users[username] = conn
             user.set_name(username)
-            response = (conn, f"<server> Account \"{username}\" created")
-        self.lock.release()
+            self.lock.release()
+
+            response = (conn, f'<server> Account created with username "{username}".')
 
         return [response]
 
