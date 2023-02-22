@@ -1,7 +1,6 @@
 import grpc
 import grpc_proto.chat_pb2 as chat_pb2
 import grpc_proto.chat_pb2_grpc as chat_pb2_grpc
-from utils import print_with_prompt
 
 import threading
 
@@ -17,6 +16,7 @@ class ChatClient:
         self.__stub = chat_pb2_grpc.ChatServerStub(self.__channel)
         self.__user = None
         self.__is_connected = False
+        self.__listening_stream = None
 
         print("<server> Welcome to Chat!")
 
@@ -93,9 +93,12 @@ class ChatClient:
             username: The username to register against the chat server
         """
         response = self.__stub.CreateAccount(chat_pb2.User(username=username))
+
         self.__user = response
         self.__is_connected = True
 
+        # Now that we are connected, start listening for messages on the chat stream
+        self.__listening_stream = self.__stub.ChatStream(chat_pb2.User(username=self.__user.username))
         threading.Thread(target=self.check_messages, daemon=True).start()
 
         print(
@@ -114,6 +117,10 @@ class ChatClient:
         print(f'<server> Account "{self.username}" deleted.')
 
         self.__user = None
+        self.__is_connected = False
+
+        # We are no longer connected, so stop listening for messages
+        self.__listening_stream.cancel()
 
         # return statement for unit testing verification
         return f'<server> Account "{self.username}" deleted.'
@@ -126,10 +133,14 @@ class ChatClient:
         """
         response = self.__stub.Login(chat_pb2.User(username=username))
 
-        print(f'<server> Account "{self.username}" logged in.')
+        print(f'<server> Account "{username}" logged in.')
 
         self.__user = response
         self.__is_connected = True
+
+        # Now that we are connected, start listening for messages on the chat stream
+        self.__listening_stream = self.__stub.ChatStream(chat_pb2.User(username=self.__user.username))
+        threading.Thread(target=self.check_messages, daemon=True).start()
 
         # return statement for unit testing verification
         return f'<server> Account "{self.username}" logged in.'
@@ -143,9 +154,12 @@ class ChatClient:
         self.__stub.Logout(self.__user)
         print(f'<server> Account "{self.username}" logged out.')
         username = self.username
-        
+
         self.__user = None
         self.__is_connected = False
+
+        # We are no longer connected, so stop listening for messages
+        self.__listening_stream.cancel()
 
         # return statement for unit testing verification
         return f'<server> Account "{username}" logged out.'
@@ -172,8 +186,9 @@ class ChatClient:
         Returns:
             str: string to indicate the message was sent successfully.
         """
-        self.__stub.SendMessage(chat_pb2.ChatMessage(username=self.username, recip_username=send_user, message=message))
-        
+        self.__stub.SendMessage(chat_pb2.ChatMessage(
+            username=self.username, recip_username=send_user, message=message))
+
         # return statement for unit testing verification
         return "Message sent."
 
@@ -182,9 +197,13 @@ class ChatClient:
         This method will be ran in a separate thread as the main/ui thread, because the for-in call is blocking
         when waiting for new messages
         """
-        for chat_message in self.__stub.ChatStream(chat_pb2.User(username=self.__user.username)):  # this line will wait for new messages from the server!
-            print_with_prompt("<{}> {}".format(chat_message.username,
-                  chat_message.message))  # debugging statement
+        try:
+            for chat_message in self.__listening_stream:  # this line will wait for new messages from the server!
+                print(f"<{chat_message.username}> {chat_message.message}")  # debugging statement
+        except grpc.RpcError as rpc_error:
+            # When the stream is cancelled, the server will send a CANCELLED error which we want to ignore
+            if rpc_error.code() == grpc.StatusCode.CANCELLED:
+                pass
 
     def deliver_undelivered(self):
         self.__stub.DeliverMessages(self.__user)

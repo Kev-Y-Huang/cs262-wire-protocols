@@ -39,7 +39,7 @@ def main():
 
         # Continuously listen for user inputs in the terminal
         while True:
-            usr_input = input('<you> ')
+            usr_input = input()
             if usr_input == "quit":
                 break
             else:
@@ -61,7 +61,7 @@ def main():
         chat = ChatClient(ip_address, port)
 
         while True:
-            usr_input = input('<you> ')
+            usr_input = input()
             if usr_input == "quit":
                 sys.exit()
             else:

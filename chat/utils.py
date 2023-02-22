@@ -54,7 +54,3 @@ def get_server_config_from_file(relative_path):
     absolute_path = os.path.join(ROOT_DIR, relative_path)
     yaml_config = read_yaml_config(absolute_path)
     return get_server_config_from_yaml(yaml_config)
-
-
-def print_with_prompt(message):
-    print(f'\r{message}\n<you> ', end="")
