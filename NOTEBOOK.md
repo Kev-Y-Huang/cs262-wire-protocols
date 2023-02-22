@@ -31,7 +31,7 @@ For our wire protocol implementation, we decided to use threading in the server 
 
 In order to create a robust chat app, we wanted to make sure that all of our code worked as intended. To do this, we wrote tests for all functions within the GRPC and wire protocol chat implementations, as well as the wire protocol we implemented itself. Our tests were able to handle multiple edge cases we thought of, detailed below. We also manually tested to make sure that the server could handle multiple clients at once, and that the server could handle multiple messages being sent at once.
 
-Edge cases and intended behavior:
+Edge cases and expected behavior:
 * User tries to create an account with a pipe character inside
     * does not allow user to create account
 * User tries to create an account with a username that already exists
@@ -46,8 +46,8 @@ Edge cases and intended behavior:
     * message is queued to be sent to user when they log in
 * User tries to send a message to a user that is logged in and has a queued message
     * message is sent to user immediately, queued messages stayed queued
-* User tries to log in to a user that is already logged in
-    * does not allow user to log in
+* User tries to log in to an account that is already logged in
+    * does not allow new user to log in
 * User deletes an account that has queued messages
     * deletes account and all queued messages
     

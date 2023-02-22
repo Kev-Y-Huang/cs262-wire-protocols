@@ -175,7 +175,7 @@ class Chat:
         # if the username already exists, reject the request
         if username in self.accounts:
             response = (
-                conn, f"<server> Account \"{username}\" failed to create. Please select another username")
+                conn, f"<server> Account \"{username}\" failed to create. Username already exists, please select another username")
         else:
             # Updates chat app state for the new account
             self.accounts[username] = []
@@ -205,6 +205,9 @@ class Chat:
         # if the username is not in accounts, we cannot log in
         if username not in self.accounts:
             response = (conn, f"<server> Account \"{username}\" not found")
+        # if another user is already logged in, we cannot the new user in
+        elif username in self.online_users:
+            response = (conn, f"<server> Account \"{username}\" is already logged in. You cannot log in to the same account from multiple clients.")
         # otherwise, we will try to log in
         else:
             # if the user is logged-in to a different account, we need to log them out
