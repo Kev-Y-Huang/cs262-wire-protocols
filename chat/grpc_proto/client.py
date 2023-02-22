@@ -186,6 +186,8 @@ class ChatClient:
         self.__stub.SendMessage(chat_pb2.ChatMessage(
             username=self.username, recip_username=send_user, message=message))
 
+        print("<server> Message sent to user. If user is offline, the message has been queued to deliver.")
+
         # return statement for unit testing verification
         return "Message sent."
 

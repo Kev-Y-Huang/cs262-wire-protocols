@@ -218,6 +218,11 @@ class ChatServer(chat_pb2_grpc.ChatServer):
 
         # If the user is not online, we cannot send them messages
         while self.is_connected and request.username in self.online_users:
+            # if there the user has deleted, they will not be in self.users
+            # not checking for this may cause a multi-threaded error so we should 
+            # stop streaming messages to that user since their account is deleted
+            if request.username not in self.users:
+                break
             # Send messages to the user if they exist
             while self.users[request.username]["messages"]:
                 yield self.users[request.username]["messages"].pop(0)

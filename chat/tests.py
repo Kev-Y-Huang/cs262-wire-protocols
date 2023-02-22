@@ -141,6 +141,30 @@ client = ChatClient("127.0.0.1", 6666)
 # Test creating a user
 assert client.create_account("user1") == "<server> Account created with username \"user1\"."
 
+# Test creating a user that already exists
+try:
+    client.create_account("user1")
+except grpc._channel._InactiveRpcError:
+    print("Success. Cannot create account that already exists")
+except:
+    assert False
+
+# Test creating a user that has an empty username
+try:
+    client.create_account("")
+except grpc._channel._InactiveRpcError:
+    print("Success. Cannot create account with empty username")
+except:
+    assert False
+
+# Test creating a user that has pipe character in username
+try:
+    client.create_account("|")
+except grpc._channel._InactiveRpcError:
+    print("Success. Cannot create account with pipe character in username")
+except:
+    assert False
+
 # Test logging out of a user
 assert client.logout_account() == "<server> Account \"user1\" logged out."
 
@@ -148,12 +172,39 @@ assert client.logout_account() == "<server> Account \"user1\" logged out."
 assert client.create_account("user2") == "<server> Account created with username \"user2\"."
 assert client.send_message("user1", "Hello, user1!") == "Message sent."
 
+# Test sending a message to a user that does not exist
+try:
+    client.send_message("user3", "Hello, user3!")
+except grpc._channel._InactiveRpcError:
+    print("Success. Cannot send message to account that does not exist")
+except:
+    assert False
+
+# Test sending a message to themselves
+assert client.send_message("user2", "Hello, msyelf!") == "Message sent."
+
 # Test logging in to a user
 assert client.logout_account() == "<server> Account \"user2\" logged out."
+assert client.login_account("user1") == "<server> Account \"user1\" logged in."
 
 # Test getting all queued messages
-assert client.login_account("user1") == "<server> Account \"user1\" logged in."
 assert client.deliver_undelivered() == "Undelivered messages delivered."
+
+# Test logging into an account that is already logged in
+try:
+    client.login_account("user1") 
+except grpc._channel._InactiveRpcError:
+    print("Success. Cannot log in to account that is already logged in")
+except:
+    assert False
+
+# Test logging into an account that does not exist
+try:
+    client.login_account("user3")
+except grpc._channel._InactiveRpcError:
+    print("Success. Cannot log in to account that does not exist")
+except:
+    assert False
 
 # Test listing all accounts
 assert client.list_accounts("") == "<server> All Accounts: [\'user1\', \'user2\']"
@@ -161,7 +212,7 @@ assert client.list_accounts("") == "<server> All Accounts: [\'user1\', \'user2\'
 # Disconnect the server
 service.is_connected = False
 
-time.sleep(0.5)
+time.sleep(0.1)
 print("*********************************************")
 print("***** Done testing the GRPC chat app... *****")
 print("*********************************************")

@@ -19,7 +19,7 @@ Format: <command>|<text>
 
 The general form of our wire protocol is a 4-byte unsigned integer operation code, followed by a pipe character, followed by the relevant information in each particular request. We encode the whole packet using `utf-8` before sending across a socket. We chose to use `utf-8` because it is the most common encoding used for text, and it is the default encoding for Python. We chose to use a 4-byte unsigned integer for the operation code because it gave us the flexibility to add more potential operations in the future.
 
-We also decided to limit the length of the message to 280 characters. We chose these limits because we wanted to make sure that the username and message would fit in the 1024 byte buffer we used for our socket and remove any potential edge cases that could arise from having a message that was too long.
+We also decided to limit the length of the message to 280 characters. We chose this limit because it seemed like a good idea (thinking Twitter) and we wanted to make sure that the username and message would fit in the 1024 byte buffer we used for our socket and remove any potential edge cases that could arise from having a message that was too long.
 
 ### Wire Protocol Threading
 
