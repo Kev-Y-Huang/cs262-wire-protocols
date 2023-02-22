@@ -1,5 +1,6 @@
 import logging
 import re
+import threading
 
 import grpc
 import grpc_proto.chat_pb2 as chat_pb2
@@ -22,6 +23,9 @@ class ChatServer(chat_pb2_grpc.ChatServer):
     is_connected: bool
         Boolean representing whether the server is up and connected
 
+    lock: Lock()
+        Primative lock for multithread synchronization
+
     Methods
     -------
     says(sound=None)
@@ -29,12 +33,10 @@ class ChatServer(chat_pb2_grpc.ChatServer):
     """
 
     def __init__(self):
-        # dictionary of all accounts and their messages
         self.users = {}
-        # set of online users
         self.online_users = set()
-        # boolean representing whether the server is up and connected
         self.is_connected = True
+        self.lock = threading.Lock()
 
     # helper function to send a message to a user
     def server_message(self, recip_username, message):
@@ -58,9 +60,11 @@ class ChatServer(chat_pb2_grpc.ChatServer):
 
         list_of_usernames = chat_pb2.ListofUsernames()
 
+        self.lock.acquire()
         for username in self.users:
             if filter.match(username):
                 list_of_usernames.usernames.append(username)
+        self.lock.release()
 
         return list_of_usernames
 
@@ -92,8 +96,11 @@ class ChatServer(chat_pb2_grpc.ChatServer):
             return chat_pb2.ListofUsernames()
 
         # Updates chat server state for the new account
+        self.lock.acquire()
         self.users[username] = {"messages": [], "queue": []}
         self.online_users.add(username)
+        self.lock.release()
+
         logging.info(f'User "{username}" has been created')
         return chat_pb2.User(username=username)
 
@@ -120,7 +127,10 @@ class ChatServer(chat_pb2_grpc.ChatServer):
             return chat_pb2.User()
 
         # Updates chat server state with account connection
+        self.lock.acquire()
         self.online_users.add(username)
+        self.lock.release()
+
         logging.info(f'User has logged into "{username}"')
         return chat_pb2.User(username=username)
 
@@ -140,7 +150,10 @@ class ChatServer(chat_pb2_grpc.ChatServer):
             return chat_pb2.User()
 
         # Deletes the user from the online users
+        self.lock.acquire()
         self.online_users.remove(username)
+        self.lock.release()
+
         logging.info(f'User has logged out of "{username}"')
         return chat_pb2.User(username=username)
 
@@ -160,8 +173,11 @@ class ChatServer(chat_pb2_grpc.ChatServer):
             return chat_pb2.User()
 
         # Deletes the user from the online users and the users dictionary
+        self.lock.acquire()
         del self.users[username]
         self.online_users.remove(username)
+        self.lock.release()
+
         logging.info(f'User "{username}" has been deleted')
         return chat_pb2.User(username=username)
 
@@ -180,12 +196,18 @@ class ChatServer(chat_pb2_grpc.ChatServer):
             return chat_pb2.MessageStatus()
         # send the message directly if the user is online
         elif recip_username in self.online_users:
+            self.lock.acquire()
             self.users[recip_username]["messages"].append(request)
+            self.lock.release()
+
             logging.info(f'Message sent to "{recip_username}"')
             return chat_pb2.MessageStatus(status=1)
         # queue the message if the user is not online
         else:
+            self.lock.acquire()
             self.users[recip_username]["queue"].append(request)
+            self.lock.release()
+
             logging.info(f'Message queued for "{recip_username}"')
             return chat_pb2.MessageStatus(status=0)
 
@@ -195,12 +217,16 @@ class ChatServer(chat_pb2_grpc.ChatServer):
         Returns:
             Empty: Empty object
         """
+        self.lock.acquire()
+
         # Dump all queued messages into the user's message list
         queue = self.users[request.username]["queue"]
         self.users[request.username]["messages"].extend(queue)
 
         # Clear the queue
         self.users[request.username]["queue"] = []
+
+        self.lock.release()
         
         logging.info(f'All queued messages delivered to "{request.username}"')
         return chat_pb2.Empty()
